@@ -1,0 +1,376 @@
+// Business Plan Manager — Prisma Schema
+// See PRD.md §4 Database Schema for table-level documentation.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  manager
+  supervisor
+  admin
+}
+
+enum PeriodStatus {
+  planning
+  active
+  closed
+}
+
+enum AllocationStatus {
+  active
+  locked
+  closed
+}
+
+enum ProposalStatus {
+  draft
+  final
+  cancelled
+}
+
+enum LpjStatus {
+  draft
+  submitted
+  supervisor_reviewed
+  admin_approved
+  rejected
+}
+
+enum ReallocationType {
+  transfer
+  topup
+  reversal
+}
+
+enum ReallocationStatus {
+  draft
+  submitted
+  supervisor_reviewed
+  admin_approved
+  rejected
+}
+
+enum AttachmentType {
+  receipt
+  documentation
+  plan
+  signature
+}
+
+enum NumberingResetPeriod {
+  never
+  year
+  month
+}
+
+model User {
+  id                  Int       @id @default(autoincrement())
+  email               String    @unique
+  passwordHash        String    @map("password_hash")
+  name                String
+  role                Role      @default(manager)
+  department          String?
+  supervisorId        Int?      @map("supervisor_id")
+  supervisor          User?     @relation("SupervisorTeam", fields: [supervisorId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  team                User[]    @relation("SupervisorTeam")
+  signatureImagePath  String?   @map("signature_image_path")
+  active              Boolean   @default(true)
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  proposals           Proposal[] @relation("ProposalCreator")
+  lpjs                Lpj[]      @relation("LpjCreator")
+  budgetPeriods       BudgetPeriod[]      @relation("PeriodCreator")
+  budgetAllocations   BudgetAllocation[]  @relation("AllocationCreator")
+  reallocations       BudgetReallocation[] @relation("ReallocationRequester")
+  auditLogs           AuditLog[]
+  notifications       Notification[]
+  sessions            AuthSession[]
+  uploadedAttachments ProposalAttachment[] @relation("ProposalAttachmentUploader")
+  uploadedLpjFiles    LpjAttachment[]      @relation("LpjAttachmentUploader")
+
+  @@map("users")
+}
+
+model AuthSession {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@map("auth_sessions")
+}
+
+model BudgetCategory {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique
+  name        String
+  description String?
+  active      Boolean  @default(true)
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  allocations BudgetAllocation[]
+
+  @@map("budget_categories")
+}
+
+model BudgetPeriod {
+  id        Int           @id @default(autoincrement())
+  name      String
+  year      Int
+  month     Int?
+  startDate DateTime      @map("start_date")
+  endDate   DateTime      @map("end_date")
+  status    PeriodStatus  @default(planning)
+  createdById Int         @map("created_by")
+  createdBy User          @relation("PeriodCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+
+  allocations BudgetAllocation[]
+
+  @@unique([year, month])
+  @@index([status])
+  @@map("budget_periods")
+}
+
+model BudgetAllocation {
+  id              Int              @id @default(autoincrement())
+  periodId        Int              @map("period_id")
+  period          BudgetPeriod     @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  categoryId      Int              @map("category_id")
+  category        BudgetCategory   @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  department      String?
+  allocatedAmount Decimal          @db.Decimal(15, 2) @map("allocated_amount")
+  notes           String?          @db.Text
+  status          AllocationStatus @default(active)
+  createdById     Int              @map("created_by")
+  createdBy       User             @relation("AllocationCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  proposals             Proposal[]
+  reallocationsAsSource BudgetReallocation[] @relation("ReallocationSource")
+  reallocationsAsTarget BudgetReallocation[] @relation("ReallocationTarget")
+
+  @@unique([periodId, categoryId, department])
+  @@index([status])
+  @@map("budget_allocations")
+}
+
+model BudgetReallocation {
+  id                   Int                @id @default(autoincrement())
+  type                 ReallocationType
+  sourceAllocationId   Int                @map("source_allocation_id")
+  sourceAllocation     BudgetAllocation   @relation("ReallocationSource", fields: [sourceAllocationId], references: [id], onDelete: Restrict)
+  targetAllocationId   Int?               @map("target_allocation_id")
+  targetAllocation     BudgetAllocation?  @relation("ReallocationTarget", fields: [targetAllocationId], references: [id], onDelete: Restrict)
+  amount               Decimal            @db.Decimal(15, 2)
+  reason               String             @db.Text
+  relatedProposalId    Int?               @map("related_proposal_id")
+  relatedProposal      Proposal?          @relation("ReallocationRelatedProposal", fields: [relatedProposalId], references: [id], onDelete: SetNull)
+  relatedLpjId         Int?               @map("related_lpj_id")
+  relatedLpj           Lpj?               @relation("ReallocationRelatedLpj", fields: [relatedLpjId], references: [id], onDelete: SetNull)
+  reversalOfId         Int?               @map("reversal_of_id")
+  reversalOf           BudgetReallocation? @relation("ReallocationReversal", fields: [reversalOfId], references: [id], onDelete: SetNull)
+  reversedBy           BudgetReallocation[] @relation("ReallocationReversal")
+  status               ReallocationStatus @default(draft)
+  snapshotBefore       Json?              @map("snapshot_before")
+  snapshotAfter        Json?              @map("snapshot_after")
+  effectiveDate        DateTime           @map("effective_date")
+  requestedById        Int                @map("requested_by")
+  requestedBy          User               @relation("ReallocationRequester", fields: [requestedById], references: [id], onDelete: Restrict)
+  reviewedAt           DateTime?          @map("reviewed_at")
+  approvedAt           DateTime?          @map("approved_at")
+  rejectionNote        String?            @db.Text @map("rejection_note")
+  createdAt            DateTime           @default(now()) @map("created_at")
+  updatedAt            DateTime           @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([sourceAllocationId])
+  @@index([targetAllocationId])
+  @@map("budget_reallocations")
+}
+
+model Proposal {
+  id              Int              @id @default(autoincrement())
+  number          String?          @unique
+  title           String
+  objective       String?          @db.Text
+  goal            String?          @db.Text
+  allocationId    Int              @map("allocation_id")
+  allocation      BudgetAllocation @relation(fields: [allocationId], references: [id], onDelete: Restrict)
+  totalBudget     Decimal          @db.Decimal(15, 2) @map("total_budget")
+  eventStartDate  DateTime         @map("event_start_date")
+  eventEndDate    DateTime         @map("event_end_date")
+  status          ProposalStatus   @default(draft)
+  createdById     Int              @map("created_by")
+  createdBy       User             @relation("ProposalCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  finalizedAt     DateTime?        @map("finalized_at")
+  cancelledAt     DateTime?        @map("cancelled_at")
+  cancelReason    String?          @db.Text @map("cancel_reason")
+  pdfPath         String?          @map("pdf_path")
+  formData        Json?            @map("form_data")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  items           ProposalItem[]
+  attachments     ProposalAttachment[]
+  lpj             Lpj?
+  reallocations   BudgetReallocation[] @relation("ReallocationRelatedProposal")
+
+  @@index([allocationId, status])
+  @@index([createdById, status])
+  @@index([finalizedAt])
+  @@map("proposals")
+}
+
+model ProposalItem {
+  id          Int      @id @default(autoincrement())
+  proposalId  Int      @map("proposal_id")
+  proposal    Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  name        String
+  qty         Int
+  unitPrice   Decimal  @db.Decimal(15, 2) @map("unit_price")
+  total       Decimal  @db.Decimal(15, 2)
+  sortOrder   Int      @default(0) @map("sort_order")
+  lpjItems    LpjItem[]
+
+  @@index([proposalId])
+  @@map("proposal_items")
+}
+
+model ProposalAttachment {
+  id          Int       @id @default(autoincrement())
+  proposalId  Int       @map("proposal_id")
+  proposal    Proposal  @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  filePath    String    @map("file_path")
+  fileType    String    @map("file_type")
+  label       String?
+  sortOrder   Int       @default(0) @map("sort_order")
+  uploadedById Int      @map("uploaded_by")
+  uploadedBy  User      @relation("ProposalAttachmentUploader", fields: [uploadedById], references: [id], onDelete: Restrict)
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@index([proposalId])
+  @@map("proposal_attachments")
+}
+
+model NumberingConfig {
+  id              Int                  @id @default(autoincrement())
+  name            String               @unique
+  formatString    String               @map("format_string")
+  resetPeriod     NumberingResetPeriod @default(year) @map("reset_period")
+  currentSequence Int                  @default(0) @map("current_sequence")
+  lastResetAt     DateTime?            @map("last_reset_at")
+  updatedAt       DateTime             @updatedAt @map("updated_at")
+
+  @@map("numbering_configs")
+}
+
+model Lpj {
+  id            Int        @id @default(autoincrement())
+  proposalId    Int        @unique @map("proposal_id")
+  proposal      Proposal   @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  narrative     String?    @db.Text
+  evaluation    String?    @db.Text
+  totalRealized Decimal    @default(0) @db.Decimal(15, 2) @map("total_realized")
+  variance      Decimal    @default(0) @db.Decimal(15, 2)
+  status        LpjStatus  @default(draft)
+  createdById   Int        @map("created_by")
+  createdBy     User       @relation("LpjCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  submittedAt   DateTime?  @map("submitted_at")
+  reviewedAt    DateTime?  @map("reviewed_at")
+  approvedAt    DateTime?  @map("approved_at")
+  rejectionNote String?    @db.Text @map("rejection_note")
+  formData      Json?      @map("form_data")
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+
+  items         LpjItem[]
+  attachments   LpjAttachment[]
+  reallocations BudgetReallocation[] @relation("ReallocationRelatedLpj")
+
+  @@index([status])
+  @@index([approvedAt])
+  @@map("lpjs")
+}
+
+model LpjItem {
+  id              Int           @id @default(autoincrement())
+  lpjId           Int           @map("lpj_id")
+  lpj             Lpj           @relation(fields: [lpjId], references: [id], onDelete: Cascade)
+  proposalItemId  Int?          @map("proposal_item_id")
+  proposalItem    ProposalItem? @relation(fields: [proposalItemId], references: [id], onDelete: SetNull)
+  name            String
+  qty             Int
+  unitPrice       Decimal       @db.Decimal(15, 2) @map("unit_price")
+  total           Decimal       @db.Decimal(15, 2)
+  variance        Decimal       @default(0) @db.Decimal(15, 2)
+  receiptAttachmentId Int?      @map("receipt_attachment_id")
+  receiptAttachment   LpjAttachment? @relation("LpjItemReceipt", fields: [receiptAttachmentId], references: [id], onDelete: SetNull)
+
+  @@index([lpjId])
+  @@map("lpj_items")
+}
+
+model LpjAttachment {
+  id          Int            @id @default(autoincrement())
+  lpjId       Int            @map("lpj_id")
+  lpj         Lpj            @relation(fields: [lpjId], references: [id], onDelete: Cascade)
+  type        AttachmentType
+  filePath    String         @map("file_path")
+  fileType    String         @map("file_type")
+  itemRef     String?        @map("item_ref")
+  label       String?
+  uploadedById Int           @map("uploaded_by")
+  uploadedBy  User           @relation("LpjAttachmentUploader", fields: [uploadedById], references: [id], onDelete: Restrict)
+  createdAt   DateTime       @default(now()) @map("created_at")
+  itemReceipts LpjItem[]     @relation("LpjItemReceipt")
+
+  @@index([lpjId])
+  @@map("lpj_attachments")
+}
+
+model AuditLog {
+  id          Int      @id @default(autoincrement())
+  entityType  String   @map("entity_type")
+  entityId    Int      @map("entity_id")
+  action      String
+  actorId     Int?     @map("actor_id")
+  actor       User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  before      Json?
+  after       Json?
+  note        String?  @db.Text
+  atTimestamp DateTime @default(now()) @map("at_timestamp")
+
+  @@index([entityType, entityId])
+  @@index([atTimestamp(sort: Desc)])
+  @@map("audit_logs")
+}
+
+model Notification {
+  id        Int       @id @default(autoincrement())
+  userId    Int       @map("user_id")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  title     String
+  body      String?   @db.Text
+  link      String?
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@index([userId, readAt])
+  @@map("notifications")
+}
