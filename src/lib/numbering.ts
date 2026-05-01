@@ -74,7 +74,7 @@ export async function nextProposalNumber(opts: {
     let seq = cfg.currentSequence;
     let lastReset = cfg.lastResetAt;
 
-    if (shouldReset(cfg.resetPeriod, lastReset, now)) {
+    if (shouldReset(cfg.resetPeriod as 'never' | 'year' | 'month', lastReset, now)) {
       seq = 0;
       lastReset = now;
     }

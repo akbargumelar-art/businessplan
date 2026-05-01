@@ -1,6 +1,6 @@
 import { prisma } from './prisma';
 import { getAvailableForAllocation } from './budget';
-import type { Role } from '@prisma/client';
+import type { Role } from '@/types/enums';
 
 export async function listAvailableAllocations() {
   const now = new Date();

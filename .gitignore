@@ -40,6 +40,8 @@ next-env.d.ts
 
 # prisma
 /prisma/migrations/dev.db*
+/prisma/dev.db
+/prisma/dev.db-journal
 
 # uploads
 /public/uploads/*
@@ -49,10 +51,12 @@ next-env.d.ts
 /public/pdfs/*
 !/public/pdfs/.gitkeep
 
-# IDE
+# IDE / agent tooling
 .vscode/
 .idea/
 .claude/
+.agents/
+graphify-out/
 
 # logs
 logs/

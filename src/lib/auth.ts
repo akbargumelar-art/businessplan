@@ -3,7 +3,7 @@ import Credentials from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { prisma } from './prisma';
-import type { Role } from '@prisma/client';
+import type { Role } from '@/types/enums';
 
 declare module 'next-auth' {
   interface User {
@@ -16,7 +16,7 @@ declare module 'next-auth' {
 
 
 const credsSchema = z.object({
-  email: z.string().email(),
+  email: z.string().min(3),
   password: z.string().min(1),
 });
 
@@ -48,7 +48,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           id: String(user.id),
           email: user.email,
           name: user.name,
-          role: user.role,
+          role: user.role as Role,
           department: user.department,
         };
       },

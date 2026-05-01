@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { Menu, X } from 'lucide-react';
-import type { Role } from '@prisma/client';
+import type { Role } from '@/types/enums';
 import { Sidebar } from './sidebar';
 
 export function MobileNav({ user }: { user: { name?: string | null; email?: string | null; role: Role } }) {

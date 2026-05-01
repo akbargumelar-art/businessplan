@@ -147,8 +147,8 @@ export async function approveReallocation(id: number) {
       data: {
         status: 'admin_approved',
         approvedAt: new Date(),
-        snapshotBefore: before,
-        snapshotAfter: after,
+        snapshotBefore: JSON.stringify(before),
+        snapshotAfter: JSON.stringify(after),
       },
     });
     await logAudit({ entity: 'reallocation', entityId: id, action: 'approve', actorId: user.id, before, after, tx });

@@ -34,58 +34,40 @@ Spesifikasi lengkap: lihat [`PRD.md`](./PRD.md).
 
 ---
 
-## Setup Lokal (Windows)
+## Setup Lokal (Windows) — Default SQLite, Tanpa Install
 
-### 1. Install dependencies
+Setup default pakai **SQLite** (file `prisma/dev.db`, tidak perlu install MySQL/Docker). Saat deploy ke prod, switch ke MySQL.
 
 ```bash
 npm install
+cp .env.example .env       # default sudah pakai SQLite
+npm run db:push            # bikin tabel di file dev.db
+npm run db:seed            # isi 6 user + alokasi + 6 proposal + 3 LPJ + 2 reallocation dummy
+npm run dev                # http://localhost:3000
 ```
-
-### 2. Siapkan MySQL (pilih salah satu)
-
-#### Opsi A — Docker (paling mudah)
-```bash
-docker compose up -d
-```
-MySQL akan listen di `localhost:3306`, database `businessplan`, user `root` / password `password`.
-
-#### Opsi B — MySQL native (Windows installer / Laragon / XAMPP)
-- Install MySQL 8.x
-- Buat database baru: `CREATE DATABASE businessplan CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`
-- Catat connection string
-
-### 3. Buat `.env`
-
-```bash
-cp .env.example .env
-```
-
-Edit `.env`:
-- `DATABASE_URL` — sesuaikan dengan setup MySQL Anda
-- `AUTH_SECRET` — generate random 32+ char string
-
-### 4. Migrate & Seed
-
-```bash
-npm run db:push      # buat tabel di DB
-npm run db:seed      # isi data awal (users, kategori, periode bulan ini, alokasi)
-```
-
-### 5. Run dev server
-
-```bash
-npm run dev
-```
-
-Buka http://localhost:3000 — akan redirect ke `/login`.
 
 **Akun seed:**
-| Email | Password | Role |
-|---|---|---|
-| admin@local | admin123 | admin |
-| supervisor@local | super123 | supervisor |
-| manager@local | manager123 | manager |
+| Email | Password | Role | Catatan |
+|---|---|---|---|
+| admin@local | admin123 | admin | Bisa segala hal |
+| sup.sales@local | super123 | supervisor | Review LPJ tim Sales (Andi & Budi) |
+| sup.mkt@local | super123 | supervisor | Review LPJ tim Marketing (Citra) |
+| andi@local | manager123 | manager | Punya 2 proposal, 1 LPJ approved |
+| budi@local | manager123 | manager | Punya 1 proposal final + LPJ approved |
+| citra@local | manager123 | manager | Punya CSR proposal + LPJ submitted |
+
+Login → akan redirect ke `/dashboard`.
+
+### Switch ke MySQL (untuk production)
+
+1. Replace schema:
+   ```bash
+   cp prisma/schema.mysql.prisma prisma/schema.prisma
+   ```
+2. Edit `.env`: ganti `DATABASE_URL` ke `mysql://user:password@host:3306/dbname`.
+3. Pastikan database & user MySQL sudah dibuat di server.
+4. `npm run db:push` (atau `db:migrate:deploy` kalau pakai migrations).
+5. `npm run db:seed` (opsional — bisa skip kalau mau bikin user manual).
 
 ---
 

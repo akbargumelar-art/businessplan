@@ -17,7 +17,7 @@ import {
   Users,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
-import type { Role } from '@prisma/client';
+import type { Role } from '@/types/enums';
 
 type NavItem = {
   href: string;

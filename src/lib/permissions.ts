@@ -1,5 +1,5 @@
 import { auth } from './auth';
-import type { Role } from '@prisma/client';
+import type { Role } from '@/types/enums';
 import { redirect } from 'next/navigation';
 
 export type AuthUser = {

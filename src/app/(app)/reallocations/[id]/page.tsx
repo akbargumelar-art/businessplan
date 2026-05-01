@@ -89,7 +89,12 @@ export default async function ReallocationDetailPage({ params }: { params: Promi
         <Card className="mb-4">
           <CardHeader><CardTitle>Snapshot Eksekusi</CardTitle></CardHeader>
           <CardContent>
-            <pre className="text-xs bg-slate-50 p-3 rounded overflow-auto">{JSON.stringify({ before: r.snapshotBefore, after: r.snapshotAfter }, null, 2)}</pre>
+            <pre className="text-xs bg-slate-50 p-3 rounded overflow-auto">
+              {JSON.stringify({
+                before: safeParseJson(r.snapshotBefore),
+                after: safeParseJson(r.snapshotAfter),
+              }, null, 2)}
+            </pre>
           </CardContent>
         </Card>
       )}
@@ -111,6 +116,11 @@ export default async function ReallocationDetailPage({ params }: { params: Promi
       )}
     </div>
   );
+}
+
+function safeParseJson(s: string | null): unknown {
+  if (!s) return null;
+  try { return JSON.parse(s); } catch { return s; }
 }
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
