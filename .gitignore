@@ -61,3 +61,5 @@ graphify-out/
 # logs
 logs/
 *.log
+test-output.pdf
+test-promotor.pdf

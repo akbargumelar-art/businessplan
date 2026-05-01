@@ -1,7 +1,9 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from './prisma';
 
-const TOKEN_RE = /\{(NO|YYYY|YY|MM|DD|DEPT|TPL)(?::(\d+))?\}/g;
+const TOKEN_RE = /\{(NO|YYYY|YY|MM|ROMAN|DD|DEPT|TPL)(?::(\d+))?\}/g;
+
+const ROMAN_MONTHS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
 
 export type NumberingTokens = {
   DEPT?: string;
@@ -25,6 +27,8 @@ function fillTokens(format: string, sequence: number, date: Date, extra: Numberi
         return yy;
       case 'MM':
         return mm;
+      case 'ROMAN':
+        return ROMAN_MONTHS[date.getMonth()];
       case 'DD':
         return dd;
       case 'DEPT':

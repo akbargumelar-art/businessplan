@@ -60,6 +60,7 @@ export default async function EditProposalPage({ params }: { params: Promise<{ i
           title: proposal.title,
           objective: proposal.objective,
           goal: proposal.goal,
+          description: proposal.description,
           allocationId: proposal.allocationId,
           eventStartDate: proposal.eventStartDate.toISOString().slice(0, 10),
           eventEndDate: proposal.eventEndDate.toISOString().slice(0, 10),
@@ -68,6 +69,19 @@ export default async function EditProposalPage({ params }: { params: Promise<{ i
             qty: i.qty,
             unitPrice: toNumber(i.unitPrice),
           })),
+          kantor: proposal.kantor,
+          gmClusterName: proposal.gmClusterName,
+          programType: proposal.programType,
+          usageNote: proposal.usageNote,
+          productInfo: proposal.productInfo,
+          applicantName: proposal.applicantName,
+          applicantPhone: proposal.applicantPhone,
+          applicantAddress: proposal.applicantAddress,
+          signatureCity: proposal.signatureCity,
+          approverName: proposal.approverName,
+          approverTitle: proposal.approverTitle,
+          witnessName: proposal.witnessName,
+          witnessTitle: proposal.witnessTitle,
         }}
       />
     </div>

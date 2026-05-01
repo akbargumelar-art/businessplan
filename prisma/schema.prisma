@@ -166,6 +166,21 @@ model Proposal {
   cancelReason    String?          @map("cancel_reason")
   pdfPath         String?          @map("pdf_path")
   formData        String?            @map("form_data")
+  // Detail untuk PDF format (Agrabudi proposal layout)
+  kantor          String?
+  gmClusterName   String?          @map("gm_cluster_name")
+  programType     String?          @map("program_type")
+  description     String?
+  usageNote       String?          @map("usage_note")
+  productInfo     String?          @map("product_info")
+  applicantName   String?          @map("applicant_name")
+  applicantPhone  String?          @map("applicant_phone")
+  applicantAddress String?         @map("applicant_address")
+  signatureCity   String?          @map("signature_city")
+  approverName    String?          @map("approver_name")
+  approverTitle   String?          @map("approver_title")
+  witnessName     String?          @map("witness_name")
+  witnessTitle    String?          @map("witness_title")
   createdAt       DateTime         @default(now()) @map("created_at")
   updatedAt       DateTime         @updatedAt @map("updated_at")
 
@@ -209,6 +224,28 @@ model ProposalAttachment {
 
   @@index([proposalId])
   @@map("proposal_attachments")
+}
+
+model OrganizationSettings {
+  id              Int      @id @default(autoincrement())
+  companyName     String   @map("company_name")
+  brandLine1      String   @map("brand_line_1")        // mis. "PROPOSAL"
+  brandLine2      String   @map("brand_line_2")        // mis. "KEGIATAN PERMOHONAN BUDGET"
+  brandLine3      String?  @map("brand_line_3")        // mis. "CLUSTER CIREBON RAYA"
+  logoText        String?  @map("logo_text")           // text logo placeholder
+  defaultInstitution String? @map("default_institution") // PT AGRABUDI KOMUNIKA Cluster Cirebon Raya
+  defaultAddress  String?  @map("default_address")
+  defaultPhone    String?  @map("default_phone")
+  vpName          String?  @map("vp_name")             // Ahmad Barkah
+  vpTitle         String?  @map("vp_title")            // Vice President
+  finDirName      String?  @map("fin_dir_name")        // Buldani
+  finDirTitle     String?  @map("fin_dir_title")       // Direktur Keuangan
+  defaultKantor   String?  @map("default_kantor")
+  defaultGmCluster String? @map("default_gm_cluster")
+  defaultSignatureCity String? @map("default_signature_city")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("organization_settings")
 }
 
 model NumberingConfig {

@@ -109,15 +109,40 @@ async function main() {
     update: {},
     create: {
       name: 'proposal',
-      formatString: 'PRP/{TPL}/{NO:0000}/{MM}/{YYYY}',
+      formatString: '{NO}/ABK-CRB/BP/{ROMAN}/{MM}/{YYYY}',
       resetPeriod: 'year',
-      currentSequence: 0,
+      currentSequence: 14,
     },
   });
 
+  // ─── ORGANIZATION SETTINGS ────────────────────────────────────────────────
+  const orgExists = await prisma.organizationSettings.findFirst();
+  if (!orgExists) {
+    await prisma.organizationSettings.create({
+      data: {
+        companyName: 'PT AGRABUDI KOMUNIKA',
+        brandLine1: 'PROPOSAL',
+        brandLine2: 'KEGIATAN PERMOHONAN BUDGET',
+        brandLine3: 'CLUSTER CIREBON RAYA',
+        logoText: 'AGRABUDI KOMUNIKA',
+        defaultInstitution: 'PT AGRABUDI KOMUNIKA Cluster Cirebon Raya',
+        defaultAddress: 'Jl. Siliwangi No. 196 Kelurahan Cigembang Kec. Kuningan Kab. Kuningan',
+        defaultPhone: '0233-284555',
+        vpName: 'Ahmad Barkah',
+        vpTitle: 'Vice President',
+        finDirName: 'Buldani',
+        finDirTitle: 'Direktur Keuangan',
+        defaultKantor: 'TAP Kuningan',
+        defaultGmCluster: 'Firman Suhaeddy',
+        defaultSignatureCity: 'Kuningan',
+      },
+    });
+  }
+
   // ─── PERIODS — bulan lalu, bulan ini, bulan depan ────────────────────────────────────────────────
   const now = new Date();
-  const periods: { id: number; name: string; year: number; month: number; status: string }[] = [];
+  type Period = NonNullable<Awaited<ReturnType<typeof prisma.budgetPeriod.findUnique>>>;
+  const periods: Period[] = [];
 
   for (const offset of [-1, 0, 1]) {
     const d = new Date(now.getFullYear(), now.getMonth() + offset, 1);
@@ -189,9 +214,23 @@ async function main() {
     eventEnd: Date;
     objective: string;
     goal: string;
+    description?: string;
     status?: 'draft' | 'final' | 'cancelled';
     number?: string | null;
     finalizedAt?: Date | null;
+    kantor?: string;
+    gmClusterName?: string;
+    programType?: string;
+    usageNote?: string;
+    productInfo?: string;
+    applicantName?: string;
+    applicantPhone?: string;
+    applicantAddress?: string;
+    signatureCity?: string;
+    approverName?: string;
+    approverTitle?: string;
+    witnessName?: string;
+    witnessTitle?: string;
   }) {
     const allocId = allocByPeriodCat.get(`${opts.periodId}:${opts.categoryCode}`)!.id;
     const total = opts.items.reduce((s, i) => s + i.qty * i.unitPrice, 0);
@@ -201,6 +240,20 @@ async function main() {
         title: opts.title,
         objective: opts.objective,
         goal: opts.goal,
+        description: opts.description,
+        kantor: opts.kantor,
+        gmClusterName: opts.gmClusterName,
+        programType: opts.programType,
+        usageNote: opts.usageNote,
+        productInfo: opts.productInfo,
+        applicantName: opts.applicantName,
+        applicantPhone: opts.applicantPhone,
+        applicantAddress: opts.applicantAddress,
+        signatureCity: opts.signatureCity,
+        approverName: opts.approverName,
+        approverTitle: opts.approverTitle,
+        witnessName: opts.witnessName,
+        witnessTitle: opts.witnessTitle,
         allocationId: allocId,
         totalBudget: new Prisma.Decimal(total),
         eventStartDate: opts.eventStart,
@@ -225,6 +278,50 @@ async function main() {
   // Skip if already seeded with proposals
   const existingProposals = await prisma.proposal.count();
   if (existingProposals === 0) {
+    // ─── Sample khusus: meniru format proposal Agrabudi (Promotor Kuningan) ───
+    await makeProposal({
+      title: 'Program DS Project TELKOMSEL',
+      creatorId: mgrAndi.id, // Andi (Manager Support Cirebon Raya — pakai akun andi)
+      periodId: lastMonth.id,
+      categoryCode: 'PROMO_TRADE',
+      eventStart: new Date(lastMonth.startDate),
+      eventEnd: new Date(lastMonth.endDate),
+      objective: 'Meningkatkan Sellout di Kabupaten Kuningan',
+      goal: 'Sellout naik di Kab. Kuningan via Promotor outlet Rena Cell.',
+      description:
+        '- Outlet Rena Cell diberi bantuan berupa Promotor sebanyak 1 orang\n' +
+        '- Kontrak Promotor 1 bulan\n' +
+        `- Periode 01 - 30 ${monthNames[lastMonth.month! - 1]} ${lastMonth.year}\n` +
+        '- Upah Pokok @Rp. 800.000,-\n' +
+        '- Upah Bonus Target @Rp. 1.700.000,-\n' +
+        '  Target 800pcs\n' +
+        '  80% - 99% : Rp. 2.000,-/pcs\n' +
+        '  100% : Rp. 2.200,-/pcs\n' +
+        '  >100%: Rp. 2.300,-/pcs',
+      programType: 'Support Produk,Budget Komitmen',
+      usageNote: 'Gaji Project Promotor Kuningan',
+      productInfo:
+        'Biaya Gaji Project Promotor Kuningan @Rp. 2.500.000,-\n' +
+        'di transfer ke rek. BCA 2990938531 an Rega Anggara',
+      kantor: 'TAP Kuningan',
+      gmClusterName: 'Firman Suhaeddy',
+      applicantName: 'Firman Suhaeddy',
+      applicantPhone: '0233-284555 / 081222229922',
+      applicantAddress: 'Jl. Siliwangi No. 196 Kelurahan Cigembang Kec. Kuningan Kab. Kuningan',
+      signatureCity: 'Kuningan',
+      approverName: 'Firman Suhaeddy',
+      approverTitle: 'Manager Cluster Cirebon Raya',
+      witnessName: 'Setya Surya Pratama',
+      witnessTitle: 'SPV MCOT Cluster Cirebon Raya',
+      items: [
+        { name: 'Gaji Pokok Promotor', qty: 1, unitPrice: 800_000 },
+        { name: 'Insentif Penjualan (target 800pcs, achievement 46%)', qty: 1, unitPrice: 1_700_000 },
+      ],
+      status: 'final',
+      number: `15/ABK-CRB/BP/IV/${lastMonth.month}/${lastMonth.year}`,
+      finalizedAt: new Date(lastMonth.startDate),
+    });
+
     // BULAN LALU — proposals already final + LPJ approved
     const p1 = await makeProposal({
       title: 'Promo Trade Akhir Bulan — Diskon Distributor',

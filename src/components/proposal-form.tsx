@@ -17,6 +17,13 @@ type AllocationOption = {
   period: string;
 };
 
+const PROGRAM_TYPE_OPTIONS = [
+  'Diskon Produk', 'Pembelian Produk', 'Biaya Administrasi',
+  'Subsidi Produk', 'Penjualan Piutang', 'Sharing Budget',
+  'Support Produk', 'Budget Komitmen', 'Branding',
+  'Kontrak Produk', 'Pengadaan Hadiah',
+];
+
 export function ProposalForm({
   action,
   allocations,
@@ -29,13 +36,40 @@ export function ProposalForm({
     title?: string;
     objective?: string | null;
     goal?: string | null;
+    description?: string | null;
     allocationId?: number;
     eventStartDate?: string;
     eventEndDate?: string;
     items?: Item[];
+    kantor?: string | null;
+    gmClusterName?: string | null;
+    programType?: string | null;
+    usageNote?: string | null;
+    productInfo?: string | null;
+    applicantName?: string | null;
+    applicantPhone?: string | null;
+    applicantAddress?: string | null;
+    signatureCity?: string | null;
+    approverName?: string | null;
+    approverTitle?: string | null;
+    witnessName?: string | null;
+    witnessTitle?: string | null;
   };
   submitLabel?: string;
 }) {
+  const [programTypes, setProgramTypes] = useState<Set<string>>(
+    new Set((initial?.programType ?? '').split(',').map((s) => s.trim()).filter(Boolean)),
+  );
+
+  function toggleProgramType(label: string) {
+    setProgramTypes((prev) => {
+      const next = new Set(prev);
+      if (next.has(label)) next.delete(label);
+      else next.add(label);
+      return next;
+    });
+  }
+
   const [items, setItems] = useState<Item[]>(initial?.items?.length ? initial.items : [{ name: '', qty: 1, unitPrice: 0 }]);
   const [allocationId, setAllocationId] = useState<number | undefined>(initial?.allocationId);
   const [pending, startTransition] = useTransition();
@@ -58,6 +92,7 @@ export function ProposalForm({
   function onSubmit(formData: FormData) {
     setError(null);
     formData.set('items', JSON.stringify(items));
+    formData.set('programType', Array.from(programTypes).join(','));
     startTransition(async () => {
       try {
         await action(formData);
@@ -90,12 +125,93 @@ export function ProposalForm({
             </FormField>
           </div>
 
-          <FormField label="Objective" hint="Tujuan jangka pendek dari kegiatan">
+          <FormField label="Objective" hint="Tujuan jangka pendek — tampil di PDF sebagai 'Tujuan Program'">
             <Textarea name="objective" rows={2} defaultValue={initial?.objective ?? ''} />
           </FormField>
-          <FormField label="Goal" hint="Outcome yang diharapkan">
-            <Textarea name="goal" rows={2} defaultValue={initial?.goal ?? ''} />
+          <FormField label="Deskripsi Program" hint="Penjelasan detail — tampil di PDF sebagai 'Deskripsi Program'">
+            <Textarea name="description" rows={4} defaultValue={initial?.description ?? initial?.goal ?? ''} placeholder="- Outlet ABC diberi bantuan Promotor 1 orang&#10;- Periode 01 - 30 April 2026&#10;- Upah Pokok @Rp. 800.000,-" />
           </FormField>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle>Detail PDF — Header & Pemohon</CardTitle></CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid sm:grid-cols-2 gap-4">
+            <FormField label="Kantor" hint="Default: TAP Kuningan">
+              <Input name="kantor" defaultValue={initial?.kantor ?? ''} placeholder="TAP Kuningan" />
+            </FormField>
+            <FormField label="GM Cluster">
+              <Input name="gmClusterName" defaultValue={initial?.gmClusterName ?? ''} placeholder="Firman Suhaeddy" />
+            </FormField>
+          </div>
+
+          <FormField label="Jenis Program" hint="Centang yang relevan — akan tampil sebagai checkbox di PDF">
+            <div className="grid grid-cols-3 gap-1.5 border border-slate-200 rounded p-3">
+              {PROGRAM_TYPE_OPTIONS.map((label) => (
+                <label key={label} className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={programTypes.has(label)}
+                    onChange={() => toggleProgramType(label)}
+                  />
+                  {label}
+                </label>
+              ))}
+            </div>
+          </FormField>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle>Detail PDF — Budget & Produk</CardTitle></CardHeader>
+        <CardContent className="space-y-4">
+          <FormField label="Deskripsi Penggunaan Budget" hint="1 line — tampil di section DATA BUDGET">
+            <Input name="usageNote" defaultValue={initial?.usageNote ?? ''} placeholder="Gaji Project Promotor Kuningan" />
+          </FormField>
+          <FormField label="Jumlah & Keterangan Produk" hint="Multi-line — tampil di section DATA PRODUK (info transfer rek dll)">
+            <Textarea name="productInfo" rows={3} defaultValue={initial?.productInfo ?? ''} placeholder="Biaya Gaji Project Promotor Kuningan @Rp. 2.500.000,-&#10;di transfer ke rek. BCA 1234567890 an Nama Penerima" />
+          </FormField>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle>Detail PDF — Data Subject</CardTitle></CardHeader>
+        <CardContent className="space-y-4">
+          <FormField label="Nama Pemohon (di PDF)" hint="Kosongkan untuk pakai nama akun login">
+            <Input name="applicantName" defaultValue={initial?.applicantName ?? ''} placeholder="Firman Suhaeddy" />
+          </FormField>
+          <FormField label="No TLP / HP">
+            <Input name="applicantPhone" defaultValue={initial?.applicantPhone ?? ''} placeholder="0233-284555 / 081222229922" />
+          </FormField>
+          <FormField label="Alamat">
+            <Textarea name="applicantAddress" rows={2} defaultValue={initial?.applicantAddress ?? ''} />
+          </FormField>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle>Detail PDF — Tanda Tangan</CardTitle></CardHeader>
+        <CardContent className="space-y-4">
+          <FormField label="Kota Tanda Tangan" hint="mis. Kuningan">
+            <Input name="signatureCity" defaultValue={initial?.signatureCity ?? ''} placeholder="Kuningan" />
+          </FormField>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <FormField label="Menyetujui — Nama">
+              <Input name="approverName" defaultValue={initial?.approverName ?? ''} placeholder="Firman Suhaeddy" />
+            </FormField>
+            <FormField label="Menyetujui — Jabatan">
+              <Input name="approverTitle" defaultValue={initial?.approverTitle ?? ''} placeholder="Manager Cluster Cirebon Raya" />
+            </FormField>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <FormField label="Mengetahui — Nama">
+              <Input name="witnessName" defaultValue={initial?.witnessName ?? ''} placeholder="Setya Surya Pratama" />
+            </FormField>
+            <FormField label="Mengetahui — Jabatan">
+              <Input name="witnessTitle" defaultValue={initial?.witnessTitle ?? ''} placeholder="SPV MCOT Cluster Cirebon Raya" />
+            </FormField>
+          </div>
         </CardContent>
       </Card>
 

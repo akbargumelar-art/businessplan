@@ -4,6 +4,7 @@ import { renderToBuffer, type DocumentProps } from '@react-pdf/renderer';
 import { prisma } from '@/lib/prisma';
 import { requireUser } from '@/lib/permissions';
 import { ProposalPdf } from '@/components/pdf/proposal-pdf';
+import { getOrgSettings } from '@/lib/org';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,17 +14,20 @@ export async function GET(
 ) {
   await requireUser();
   const { id } = await params;
-  const proposal = await prisma.proposal.findUnique({
-    where: { id: Number(id) },
-    include: {
-      items: { orderBy: { sortOrder: 'asc' } },
-      allocation: { include: { category: true, period: true } },
-      createdBy: { select: { name: true, email: true } },
-    },
-  });
+  const [proposal, org] = await Promise.all([
+    prisma.proposal.findUnique({
+      where: { id: Number(id) },
+      include: {
+        items: { orderBy: { sortOrder: 'asc' } },
+        allocation: { include: { category: true, period: true } },
+        createdBy: { select: { name: true, email: true } },
+      },
+    }),
+    getOrgSettings(),
+  ]);
   if (!proposal) return new Response('Not found', { status: 404 });
 
-  const element = createElement(ProposalPdf, { proposal }) as unknown as ReactElement<DocumentProps>;
+  const element = createElement(ProposalPdf, { proposal, org }) as unknown as ReactElement<DocumentProps>;
   const buf = await renderToBuffer(element);
   const filename = `${(proposal.number ?? `draft-${proposal.id}`).replace(/[\/\\]/g, '-')}.pdf`;
 
