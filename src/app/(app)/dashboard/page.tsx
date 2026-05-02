@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Select } from '@/components/ui/input';
 import { CategoryBarChart, CategoryDonut } from '@/components/dashboard-charts';
-import { formatIDR, percent, formatDate } from '@/lib/format';
+import { formatIDR, percent } from '@/lib/format';
 
 export default async function DashboardPage({
   searchParams,

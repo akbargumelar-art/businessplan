@@ -19,5 +19,5 @@ export type ReallocationStatus =
   | 'supervisor_reviewed'
   | 'admin_approved'
   | 'rejected';
-export type AttachmentType = 'receipt' | 'documentation' | 'plan' | 'signature';
+export type AttachmentType = 'receipt' | 'documentation' | 'plan' | 'signature' | 'report';
 export type NumberingResetPeriod = 'never' | 'year' | 'month';

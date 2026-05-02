@@ -33,7 +33,7 @@ export default async function ProfilePage() {
         <CardHeader>
           <CardTitle>Tanda Tangan Digital</CardTitle>
           <p className="text-sm text-slate-500 mt-1">
-            Dipakai otomatis di PDF proposal yang Anda buat (di atas nama "Dibuat Oleh").
+            Dipakai otomatis di PDF proposal yang Anda buat (di atas nama &quot;Dibuat Oleh&quot;).
             Gambar langsung di canvas atau upload PNG/JPG (idealnya background transparan).
           </p>
         </CardHeader>

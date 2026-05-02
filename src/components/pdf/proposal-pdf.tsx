@@ -1,6 +1,8 @@
 import { Document, Page, Text, View, Image, StyleSheet } from '@react-pdf/renderer';
 import type { Proposal, ProposalItem, ProposalAttachment, BudgetAllocation, BudgetCategory, BudgetPeriod, User } from '@prisma/client';
-import { formatIDR, formatDate, monthName, toNumber } from '@/lib/format';
+/* eslint-disable jsx-a11y/alt-text */
+
+import { formatIDR, monthName, toNumber } from '@/lib/format';
 
 export type OrgSettingsForPdf = {
   companyName: string;

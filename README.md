@@ -60,14 +60,19 @@ Login → akan redirect ke `/dashboard`.
 
 ### Switch ke MySQL (untuk production)
 
-1. Replace schema:
+Schema default `prisma/schema.prisma` dipertahankan untuk local SQLite. Untuk production MySQL, gunakan `prisma/schema.mysql.prisma` lewat script khusus:
+
+1. Edit `.env`: ganti `DATABASE_URL` ke `mysql://user:password@host:3306/dbname`.
+2. Pastikan database dan user MySQL sudah dibuat di server.
+3. Generate Prisma client:
    ```bash
-   cp prisma/schema.mysql.prisma prisma/schema.prisma
+   npm run db:generate:mysql
    ```
-2. Edit `.env`: ganti `DATABASE_URL` ke `mysql://user:password@host:3306/dbname`.
-3. Pastikan database & user MySQL sudah dibuat di server.
-4. `npm run db:push` (atau `db:migrate:deploy` kalau pakai migrations).
-5. `npm run db:seed` (opsional — bisa skip kalau mau bikin user manual).
+4. Apply migration production:
+   ```bash
+   npm run db:migrate:deploy:mysql
+   ```
+5. `npm run db:seed` opsional untuk membuat data awal.
 
 ---
 
@@ -108,43 +113,68 @@ Login → akan redirect ke `/dashboard`.
 
 ## Deploy ke VPS
 
+Rekomendasi workflow live: **push ke GitHub, lalu pull di VPS**. Jalur ini lebih aman daripada upload langsung karena ada riwayat commit, rollback jelas, dan command deploy bisa diulang dengan hasil yang konsisten.
+
+Upload langsung ke VPS hanya disarankan untuk emergency hotfix kecil. Untuk production normal, gunakan GitHub -> VPS.
+
 ### Build & push ke GitHub
 ```bash
-git init
 git add .
-git commit -m "init business plan manager"
-git remote add origin git@github.com:USERNAME/businessplan.git
-git push -u origin main
+git commit -m "prepare production deploy"
+git push origin main
 ```
 
-### Di VPS Ubuntu (sesuai PRD §4)
+### Setup awal VPS Ubuntu
 
-**Prereq di VPS:**
-- Node.js 20+ (via `nvm` atau `nodesource`)
+Prereq:
+- Node.js 20+ atau 22 LTS
 - MySQL 8.x
 - Nginx + Certbot
 - PM2 (`npm i -g pm2`)
 
-**Steps:**
 ```bash
-git clone git@github.com:USERNAME/businessplan.git
+sudo mkdir -p /var/www/businessplan
+sudo chown -R $USER:$USER /var/www/businessplan
+cd /var/www
+git clone git@github.com:USERNAME/businessplan.git businessplan
 cd businessplan
-cp .env.example .env
-# edit .env: DATABASE_URL pakai user/password MySQL prod, AUTH_SECRET random kuat
+cp .env.production.example .env
+# edit .env: DATABASE_URL, AUTH_SECRET, NEXTAUTH_URL, UPLOAD_DIR
 npm ci
-npx prisma migrate deploy   # (jika sudah pakai migrations) atau npm run db:push
-npm run db:seed             # opsional, buat akun admin pertama
+npm run db:migrate:deploy:mysql
+npm run db:seed   # opsional, hanya untuk data awal
 npm run build
 pm2 start npm --name businessplan -- start
 pm2 save
 pm2 startup
 ```
 
-**Nginx reverse proxy** (`/etc/nginx/sites-available/businessplan`):
+### Update rutin di VPS
+
+Setelah perubahan sudah dipush ke GitHub:
+
+```bash
+cd /var/www/businessplan
+git pull --ff-only
+bash deploy.sh
+```
+
+`deploy.sh` menjalankan `npm ci`, migration MySQL, build, lalu reload PM2. Pastikan `.env` di VPS memakai `DATABASE_URL` MySQL.
+
+### Nginx reverse proxy
+
+Contoh `/etc/nginx/sites-available/businessplan`:
+
 ```nginx
 server {
     server_name budget.example.com;
     client_max_body_size 20M;
+
+    location /uploads/ {
+        alias /var/www/businessplan/shared/uploads/;
+        access_log off;
+        expires 30d;
+    }
 
     location / {
         proxy_pass http://127.0.0.1:3000;
@@ -165,16 +195,6 @@ sudo nginx -t && sudo systemctl reload nginx
 sudo certbot --nginx -d budget.example.com
 ```
 
-### Update di VPS
-```bash
-cd businessplan
-git pull
-npm ci
-npx prisma migrate deploy
-npm run build
-pm2 restart businessplan
-```
-
 ---
 
 ## Scripts
@@ -185,8 +205,11 @@ pm2 restart businessplan
 | `npm run build` | Production build (otomatis `prisma generate`) |
 | `npm start` | Run production |
 | `npm run db:push` | Sinkronkan schema ke DB tanpa migration files |
+| `npm run db:generate:mysql` | Generate Prisma client dari schema MySQL |
+| `npm run db:push:mysql` | Sinkronkan schema MySQL tanpa migration |
 | `npm run db:migrate` | Buat migration file (dev) |
 | `npm run db:migrate:deploy` | Apply migrations (prod) |
+| `npm run db:migrate:deploy:mysql` | Apply migration production MySQL |
 | `npm run db:seed` | Run seed |
 | `npm run db:studio` | Buka Prisma Studio |
 | `npm run lint` | ESLint |
@@ -234,8 +257,7 @@ prisma/
 
 - Drag-and-drop template builder (saat ini pakai 1 template default hard-coded)
 - Email notifikasi (workflow transitions)
-- File upload untuk attachment (UI ada, server action saving belum)
-- Object storage (S3) — saat ini lokal di `public/uploads`
+- Object storage (S3) - saat ini file upload disimpan di storage lokal `/uploads`
 - Bulk export PDF
 - Audit log viewer UI
 
