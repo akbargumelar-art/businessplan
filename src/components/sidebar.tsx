@@ -2,9 +2,9 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import {
   LayoutDashboard,
-  Wallet,
   FileText,
   ClipboardCheck,
   Repeat2,
@@ -17,6 +17,8 @@ import {
   Users,
   UserCircle,
   Bell,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import type { Role } from '@/types/enums';
@@ -61,27 +63,64 @@ const navGroups: { label: string; items: NavItem[] }[] = [
   },
 ];
 
+const COLLAPSED_KEY = 'bp.sidebar.collapsed';
+
 export function Sidebar({ user }: { user: { name?: string | null; email?: string | null; role: Role; unreadCount?: number } }) {
   const pathname = usePathname();
+  const [collapsed, setCollapsed] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    const v = localStorage.getItem(COLLAPSED_KEY);
+    setCollapsed(v === '1');
+    setHydrated(true);
+  }, []);
+
+  function toggle() {
+    setCollapsed((c) => {
+      const next = !c;
+      try { localStorage.setItem(COLLAPSED_KEY, next ? '1' : '0'); } catch {}
+      return next;
+    });
+  }
+
+  const widthClass = collapsed ? 'lg:w-14' : 'lg:w-56';
 
   return (
-    <aside className="hidden w-60 shrink-0 border-r border-slate-200 bg-white lg:flex lg:flex-col">
-      <div className="border-b border-slate-200 px-5 py-4">
-        <Link href="/dashboard" className="block">
-          <div className="text-base font-semibold text-blue-700">Business Plan</div>
-          <div className="text-xs text-slate-500">Budget Manager</div>
+    <aside
+      className={cn(
+        'hidden shrink-0 border-r border-slate-200 bg-white lg:flex lg:flex-col transition-[width] duration-200',
+        widthClass,
+      )}
+      data-hydrated={hydrated}
+    >
+      <div className="flex items-center justify-between border-b border-slate-200 px-3 py-3">
+        <Link href="/dashboard" className={cn('block min-w-0 flex-1', collapsed && 'hidden')}>
+          <div className="text-sm font-semibold text-blue-700 truncate">Business Plan</div>
+          <div className="text-xs text-slate-500 truncate">Budget Manager</div>
         </Link>
+        <button
+          type="button"
+          onClick={toggle}
+          className="shrink-0 rounded-md p-1 text-slate-500 hover:bg-slate-100"
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          title={collapsed ? 'Expand' : 'Collapse'}
+        >
+          {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+        </button>
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-3 py-4 scrollbar-thin">
+      <nav className="flex-1 overflow-y-auto px-2 py-3 scrollbar-thin">
         {navGroups.map((group) => {
           const visible = group.items.filter((i) => !i.roles || i.roles.includes(user.role));
           if (visible.length === 0) return null;
           return (
-            <div key={group.label} className="mb-5">
-              <div className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                {group.label}
-              </div>
+            <div key={group.label} className="mb-4">
+              {!collapsed && (
+                <div className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                  {group.label}
+                </div>
+              )}
               <ul className="space-y-0.5">
                 {visible.map((item) => {
                   const Icon = item.icon;
@@ -90,15 +129,17 @@ export function Sidebar({ user }: { user: { name?: string | null; email?: string
                     <li key={item.href}>
                       <Link
                         href={item.href}
+                        title={collapsed ? item.label : undefined}
                         className={cn(
-                          'flex items-center gap-2.5 rounded-md px-3 py-1.5 text-sm transition-colors',
+                          'flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm transition-colors',
+                          collapsed && 'justify-center px-2',
                           active
                             ? 'bg-blue-50 text-blue-700 font-medium'
                             : 'text-slate-700 hover:bg-slate-100',
                         )}
                       >
-                        <Icon className="h-4 w-4" />
-                        {item.label}
+                        <Icon className="h-4 w-4 shrink-0" />
+                        {!collapsed && <span className="truncate">{item.label}</span>}
                       </Link>
                     </li>
                   );
@@ -109,37 +150,56 @@ export function Sidebar({ user }: { user: { name?: string | null; email?: string
         })}
       </nav>
 
-      <div className="border-t border-slate-200 px-3 py-3">
-        <div className="px-3 pb-2">
-          <div className="text-sm font-medium text-slate-900 truncate">{user.name ?? user.email}</div>
-          <div className="text-xs text-slate-500 capitalize">{user.role}</div>
-        </div>
+      <div className="border-t border-slate-200 px-2 py-2">
+        {!collapsed && (
+          <div className="px-2 pb-2">
+            <div className="text-sm font-medium text-slate-900 truncate">{user.name ?? user.email}</div>
+            <div className="text-xs text-slate-500 capitalize">{user.role}</div>
+          </div>
+        )}
         <Link
           href="/notifications"
-          className="flex w-full items-center justify-between rounded-md px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100"
+          title={collapsed ? 'Notifikasi' : undefined}
+          className={cn(
+            'flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-slate-600 hover:bg-slate-100',
+            collapsed ? 'justify-center px-2' : 'justify-between',
+          )}
         >
           <span className="flex items-center gap-2">
-            <Bell className="h-4 w-4" />
-            Notifikasi
+            <Bell className="h-4 w-4 shrink-0" />
+            {!collapsed && 'Notifikasi'}
           </span>
           {user.unreadCount && user.unreadCount > 0 ? (
-            <span className="rounded-full bg-blue-600 text-white text-xs px-1.5 py-0.5 min-w-5 text-center">{user.unreadCount}</span>
+            <span className={cn(
+              'rounded-full bg-blue-600 text-white text-xs px-1.5 min-w-[1.1rem] text-center leading-4',
+              collapsed && 'absolute',
+            )}>
+              {user.unreadCount}
+            </span>
           ) : null}
         </Link>
         <Link
           href="/profile"
-          className="flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100"
+          title={collapsed ? 'Profile' : undefined}
+          className={cn(
+            'flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-slate-600 hover:bg-slate-100',
+            collapsed && 'justify-center px-2',
+          )}
         >
-          <UserCircle className="h-4 w-4" />
-          Profile & Tanda Tangan
+          <UserCircle className="h-4 w-4 shrink-0" />
+          {!collapsed && 'Profile'}
         </Link>
         <form action="/api/auth/signout" method="post">
           <button
             type="submit"
-            className="flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100"
+            title={collapsed ? 'Sign out' : undefined}
+            className={cn(
+              'flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-slate-600 hover:bg-slate-100',
+              collapsed && 'justify-center px-2',
+            )}
           >
-            <LogOut className="h-4 w-4" />
-            Sign out
+            <LogOut className="h-4 w-4 shrink-0" />
+            {!collapsed && 'Sign out'}
           </button>
         </form>
       </div>

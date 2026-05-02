@@ -4,11 +4,11 @@ import { requireUser } from '@/lib/permissions';
 import { proposalVisibilityWhere } from '@/lib/queries';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent } from '@/components/ui/card';
-import { Table, THead, TBody, Tr, Th, Td, EmptyState } from '@/components/ui/table';
 import { StatusBadge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, Input } from '@/components/ui/input';
-import { formatIDR, formatDate } from '@/lib/format';
+import { DataTable, type Column, type Row } from '@/components/ui/data-table';
+import { formatIDR, formatDate, toNumber } from '@/lib/format';
 
 export default async function ProposalsPage({
   searchParams,
@@ -36,8 +36,54 @@ export default async function ProposalsPage({
       lpj: { select: { id: true, status: true } },
     },
     orderBy: { createdAt: 'desc' },
-    take: 50,
+    take: 100,
   });
+
+  const columns: Column[] = [
+    { key: 'number', label: 'Nomor', width: 'w-40' },
+    { key: 'title', label: 'Judul' },
+    { key: 'creator', label: 'Pembuat' },
+    { key: 'period', label: 'Periode / Kategori' },
+    { key: 'event', label: 'Pelaksanaan' },
+    { key: 'total', label: 'Total', align: 'right' },
+    { key: 'status', label: 'Status' },
+    { key: 'lpj', label: 'LPJ' },
+    { key: 'actions', label: '', sortable: false },
+  ];
+
+  const rows: Row[] = proposals.map((p) => ({
+    key: p.id,
+    values: {
+      number: p.number ?? '',
+      title: p.title,
+      creator: p.createdBy.name,
+      period: p.allocation.period.name,
+      event: p.eventStartDate,
+      total: toNumber(p.totalBudget),
+      status: p.status,
+      lpj: p.lpj?.status ?? '',
+    },
+    cells: {
+      number: <span className="font-mono text-xs">{p.number ?? '-'}</span>,
+      title: (
+        <Link href={`/proposals/${p.id}`} className="font-medium text-slate-900 hover:text-blue-700 hover:underline">
+          {p.title}
+        </Link>
+      ),
+      creator: p.createdBy.name,
+      period: (
+        <div>
+          <div>{p.allocation.period.name}</div>
+          <div className="text-xs text-slate-500">{p.allocation.category.name}</div>
+        </div>
+      ),
+      event: formatDate(p.eventStartDate),
+      total: formatIDR(p.totalBudget),
+      status: <StatusBadge status={p.status} />,
+      lpj: p.lpj ? <StatusBadge status={p.lpj.status} /> : <span className="text-xs text-slate-400">—</span>,
+      actions: <Link href={`/proposals/${p.id}`}><Button size="sm" variant="outline">Detail</Button></Link>,
+    },
+  }));
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -70,43 +116,12 @@ export default async function ProposalsPage({
         </CardContent>
       </Card>
 
-      {proposals.length === 0 ? (
-        <EmptyState>Belum ada proposal yang cocok filter.</EmptyState>
-      ) : (
-        <Table>
-          <THead>
-            <Tr>
-              <Th>Nomor</Th>
-              <Th>Judul</Th>
-              <Th>Pembuat</Th>
-              <Th>Periode / Kategori</Th>
-              <Th>Pelaksanaan</Th>
-              <Th className="text-right">Total</Th>
-              <Th>Status</Th>
-              <Th>LPJ</Th>
-              <Th></Th>
-            </Tr>
-          </THead>
-          <TBody>
-            {proposals.map((p) => (
-              <Tr key={p.id}>
-                <Td className="font-mono text-xs">{p.number ?? '-'}</Td>
-                <Td className="font-medium">{p.title}</Td>
-                <Td>{p.createdBy.name}</Td>
-                <Td>
-                  <div>{p.allocation.period.name}</div>
-                  <div className="text-xs text-slate-500">{p.allocation.category.name}</div>
-                </Td>
-                <Td>{formatDate(p.eventStartDate)}</Td>
-                <Td className="text-right">{formatIDR(p.totalBudget)}</Td>
-                <Td><StatusBadge status={p.status} /></Td>
-                <Td>{p.lpj ? <StatusBadge status={p.lpj.status} /> : <span className="text-xs text-slate-400">—</span>}</Td>
-                <Td><Link href={`/proposals/${p.id}`}><Button size="sm" variant="outline">Detail</Button></Link></Td>
-              </Tr>
-            ))}
-          </TBody>
-        </Table>
-      )}
+      <DataTable
+        columns={columns}
+        rows={rows}
+        emptyMessage="Belum ada proposal yang cocok filter."
+        defaultSort={{ key: 'event', dir: 'desc' }}
+      />
     </div>
   );
 }

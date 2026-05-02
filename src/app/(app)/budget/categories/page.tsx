@@ -2,10 +2,10 @@ import { prisma } from '@/lib/prisma';
 import { requireRole } from '@/lib/permissions';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, THead, TBody, Tr, Th, Td, EmptyState } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input, FormField, Textarea } from '@/components/ui/input';
+import { DataTable, type Column, type Row } from '@/components/ui/data-table';
 import { createCategory, toggleCategory } from '@/server/actions/categories';
 
 export default async function CategoriesPage() {
@@ -13,6 +13,38 @@ export default async function CategoriesPage() {
   const categories = await prisma.budgetCategory.findMany({
     orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
   });
+
+  const columns: Column[] = [
+    { key: 'code', label: 'Code' },
+    { key: 'name', label: 'Nama' },
+    { key: 'description', label: 'Deskripsi' },
+    { key: 'sortOrder', label: 'Urutan', align: 'center', width: 'w-20' },
+    { key: 'active', label: 'Status', align: 'center' },
+    { key: 'actions', label: '', align: 'right', sortable: false },
+  ];
+
+  const rows: Row[] = categories.map((c) => ({
+    key: c.id,
+    values: {
+      code: c.code,
+      name: c.name,
+      description: c.description ?? '',
+      sortOrder: c.sortOrder,
+      active: c.active ? 1 : 0,
+    },
+    cells: {
+      code: <span className="font-mono text-xs">{c.code}</span>,
+      name: <span className="font-medium">{c.name}</span>,
+      description: <span className="text-slate-500">{c.description ?? '-'}</span>,
+      sortOrder: c.sortOrder,
+      active: <Badge variant={c.active ? 'green' : 'gray'}>{c.active ? 'Aktif' : 'Non-aktif'}</Badge>,
+      actions: (
+        <form action={async () => { 'use server'; await toggleCategory(c.id); }} className="inline">
+          <Button size="sm" variant="ghost">Toggle</Button>
+        </form>
+      ),
+    },
+  }));
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -22,45 +54,12 @@ export default async function CategoriesPage() {
       />
 
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-        <Card>
-          <CardHeader>
-            <CardTitle>Daftar Kategori</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            {categories.length === 0 ? (
-              <div className="p-5"><EmptyState>Belum ada kategori. Tambahkan di form sebelah.</EmptyState></div>
-            ) : (
-              <Table>
-                <THead>
-                  <Tr>
-                    <Th>Code</Th>
-                    <Th>Nama</Th>
-                    <Th>Deskripsi</Th>
-                    <Th className="text-center">Status</Th>
-                    <Th className="text-right">Aksi</Th>
-                  </Tr>
-                </THead>
-                <TBody>
-                  {categories.map((c) => (
-                    <Tr key={c.id}>
-                      <Td className="font-mono text-xs">{c.code}</Td>
-                      <Td className="font-medium">{c.name}</Td>
-                      <Td className="text-slate-500">{c.description ?? '-'}</Td>
-                      <Td className="text-center">
-                        <Badge variant={c.active ? 'green' : 'gray'}>{c.active ? 'Aktif' : 'Non-aktif'}</Badge>
-                      </Td>
-                      <Td className="text-right">
-                        <form action={async () => { 'use server'; await toggleCategory(c.id); }} className="inline">
-                          <Button size="sm" variant="ghost">Toggle</Button>
-                        </form>
-                      </Td>
-                    </Tr>
-                  ))}
-                </TBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+        <DataTable
+          columns={columns}
+          rows={rows}
+          emptyMessage="Belum ada kategori. Tambahkan di form sebelah."
+          defaultSort={{ key: 'sortOrder', dir: 'asc' }}
+        />
 
         <Card>
           <CardHeader>

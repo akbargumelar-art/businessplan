@@ -3,10 +3,10 @@ import { prisma } from '@/lib/prisma';
 import { requireUser, canManageBudget } from '@/lib/permissions';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, THead, TBody, Tr, Th, Td, EmptyState } from '@/components/ui/table';
 import { StatusBadge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input, FormField, Select } from '@/components/ui/input';
+import { DataTable, type Column, type Row } from '@/components/ui/data-table';
 import { formatDate, formatIDR, monthName } from '@/lib/format';
 import { createPeriod } from '@/server/actions/periods';
 import { getPeriodSummary } from '@/lib/budget';
@@ -25,6 +25,44 @@ export default async function PeriodsPage() {
   );
   const summaryMap = new Map(summaries.map((s) => [s.id, s.totals]));
 
+  const columns: Column[] = [
+    { key: 'name', label: 'Periode' },
+    { key: 'date', label: 'Tanggal' },
+    { key: 'allocated', label: 'Allocated', align: 'right' },
+    { key: 'committed', label: 'Committed', align: 'right' },
+    { key: 'absorbed', label: 'Absorbed', align: 'right' },
+    { key: 'status', label: 'Status' },
+    { key: 'actions', label: '', sortable: false },
+  ];
+
+  const rows: Row[] = periods.map((p) => {
+    const t = summaryMap.get(p.id);
+    return {
+      key: p.id,
+      values: {
+        name: p.name,
+        date: p.startDate,
+        allocated: t?.allocated ?? 0,
+        committed: t?.committed ?? 0,
+        absorbed: t?.absorbed ?? 0,
+        status: p.status,
+      },
+      cells: {
+        name: (
+          <Link href={`/budget/periods/${p.id}`} className="font-medium text-slate-900 hover:text-blue-700 hover:underline">
+            {p.name}
+          </Link>
+        ),
+        date: <span className="text-slate-500">{formatDate(p.startDate)} – {formatDate(p.endDate)}</span>,
+        allocated: formatIDR(t?.allocated ?? 0),
+        committed: formatIDR(t?.committed ?? 0),
+        absorbed: formatIDR(t?.absorbed ?? 0),
+        status: <StatusBadge status={p.status} />,
+        actions: <Link href={`/budget/periods/${p.id}`}><Button size="sm" variant="outline">Detail</Button></Link>,
+      },
+    };
+  });
+
   const now = new Date();
 
   return (
@@ -35,50 +73,11 @@ export default async function PeriodsPage() {
       />
 
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-        <Card>
-          <CardHeader>
-            <CardTitle>Daftar Periode</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            {periods.length === 0 ? (
-              <div className="p-5"><EmptyState>Belum ada periode.</EmptyState></div>
-            ) : (
-              <Table>
-                <THead>
-                  <Tr>
-                    <Th>Periode</Th>
-                    <Th>Tanggal</Th>
-                    <Th className="text-right">Allocated</Th>
-                    <Th className="text-right">Committed</Th>
-                    <Th className="text-right">Absorbed</Th>
-                    <Th>Status</Th>
-                    <Th className="text-right">Aksi</Th>
-                  </Tr>
-                </THead>
-                <TBody>
-                  {periods.map((p) => {
-                    const totals = summaryMap.get(p.id);
-                    return (
-                      <Tr key={p.id}>
-                        <Td className="font-medium">{p.name}</Td>
-                        <Td className="text-slate-500">{formatDate(p.startDate)} – {formatDate(p.endDate)}</Td>
-                        <Td className="text-right">{formatIDR(totals?.allocated ?? 0)}</Td>
-                        <Td className="text-right">{formatIDR(totals?.committed ?? 0)}</Td>
-                        <Td className="text-right">{formatIDR(totals?.absorbed ?? 0)}</Td>
-                        <Td><StatusBadge status={p.status} /></Td>
-                        <Td className="text-right">
-                          <Link href={`/budget/periods/${p.id}`}>
-                            <Button size="sm" variant="outline">Detail</Button>
-                          </Link>
-                        </Td>
-                      </Tr>
-                    );
-                  })}
-                </TBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+        <DataTable
+          columns={columns}
+          rows={rows}
+          emptyMessage="Belum ada periode."
+        />
 
         {canManage && (
           <Card>

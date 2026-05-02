@@ -2,10 +2,10 @@ import { prisma } from '@/lib/prisma';
 import { requireRole } from '@/lib/permissions';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, THead, TBody, Tr, Th, Td, EmptyState } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input, FormField, Select } from '@/components/ui/input';
+import { DataTable, type Column, type Row } from '@/components/ui/data-table';
 import { createUser, toggleUser } from '@/server/actions/users';
 
 export default async function UsersPage() {
@@ -16,51 +16,49 @@ export default async function UsersPage() {
   });
   const supervisors = users.filter((u) => u.role === 'supervisor' || u.role === 'admin');
 
+  const columns: Column[] = [
+    { key: 'name', label: 'Nama / Email' },
+    { key: 'role', label: 'Role' },
+    { key: 'department', label: 'Departemen' },
+    { key: 'supervisor', label: 'Supervisor' },
+    { key: 'active', label: 'Status' },
+    { key: 'actions', label: '', sortable: false, align: 'right' },
+  ];
+
+  const rows: Row[] = users.map((u) => ({
+    key: u.id,
+    values: {
+      name: u.name,
+      role: u.role,
+      department: u.department ?? '',
+      supervisor: u.supervisor?.name ?? '',
+      active: u.active ? 1 : 0,
+    },
+    cells: {
+      name: (
+        <div>
+          <div className="font-medium">{u.name}</div>
+          <div className="text-xs text-slate-500">{u.email}</div>
+        </div>
+      ),
+      role: <Badge variant={u.role === 'admin' ? 'purple' : u.role === 'supervisor' ? 'blue' : 'gray'}>{u.role}</Badge>,
+      department: u.department ?? '-',
+      supervisor: u.supervisor?.name ?? '-',
+      active: <Badge variant={u.active ? 'green' : 'red'}>{u.active ? 'Aktif' : 'Non-aktif'}</Badge>,
+      actions: (
+        <form action={async () => { 'use server'; await toggleUser(u.id); }} className="inline">
+          <Button size="sm" variant="ghost">Toggle</Button>
+        </form>
+      ),
+    },
+  }));
+
   return (
     <div className="max-w-6xl mx-auto">
       <PageHeader title="Users" description="Kelola akun pengguna." />
 
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-        <Card>
-          <CardHeader><CardTitle>Daftar User</CardTitle></CardHeader>
-          <CardContent className="p-0">
-            {users.length === 0 ? (
-              <div className="p-5"><EmptyState>Belum ada user.</EmptyState></div>
-            ) : (
-              <Table>
-                <THead>
-                  <Tr>
-                    <Th>Nama / Email</Th>
-                    <Th>Role</Th>
-                    <Th>Departemen</Th>
-                    <Th>Supervisor</Th>
-                    <Th>Status</Th>
-                    <Th></Th>
-                  </Tr>
-                </THead>
-                <TBody>
-                  {users.map((u) => (
-                    <Tr key={u.id}>
-                      <Td>
-                        <div className="font-medium">{u.name}</div>
-                        <div className="text-xs text-slate-500">{u.email}</div>
-                      </Td>
-                      <Td><Badge variant={u.role === 'admin' ? 'purple' : u.role === 'supervisor' ? 'blue' : 'gray'}>{u.role}</Badge></Td>
-                      <Td>{u.department ?? '-'}</Td>
-                      <Td>{u.supervisor?.name ?? '-'}</Td>
-                      <Td><Badge variant={u.active ? 'green' : 'red'}>{u.active ? 'Aktif' : 'Non-aktif'}</Badge></Td>
-                      <Td className="text-right">
-                        <form action={async () => { 'use server'; await toggleUser(u.id); }} className="inline">
-                          <Button size="sm" variant="ghost">Toggle</Button>
-                        </form>
-                      </Td>
-                    </Tr>
-                  ))}
-                </TBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+        <DataTable columns={columns} rows={rows} emptyMessage="Belum ada user." />
 
         <Card>
           <CardHeader><CardTitle>Tambah User</CardTitle></CardHeader>
