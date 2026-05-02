@@ -28,7 +28,7 @@ export default async function EditLpjPage({ params }: { params: Promise<{ id: st
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="w-full">
       <PageHeader
         title="Edit LPJ"
         description={lpj.proposal.title}

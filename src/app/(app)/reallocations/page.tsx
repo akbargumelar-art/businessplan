@@ -70,7 +70,7 @@ export default async function ReallocationsPage() {
   }));
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="w-full">
       <PageHeader
         title="Reallocation"
         description="Pengalihan dana antar alokasi (under-absorbed → program lain, top-up, reversal)."

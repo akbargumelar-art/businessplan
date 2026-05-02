@@ -54,7 +54,7 @@ export default async function UsersPage() {
   }));
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="w-full">
       <PageHeader title="Users" description="Kelola akun pengguna." />
 
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">

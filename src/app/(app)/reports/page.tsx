@@ -142,7 +142,7 @@ export default async function ReportsPage({
   }));
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="w-full">
       <PageHeader title="Reports" description={`Ringkasan budget tahun ${year}`} />
 
       <div className="grid gap-3 sm:grid-cols-3 mb-6">

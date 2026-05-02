@@ -81,7 +81,7 @@ export default async function LpjListPage({
   }));
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="w-full">
       <PageHeader title="Laporan Pertanggungjawaban (LPJ)" description="Daftar LPJ semua proposal yang sudah dieksekusi." />
 
       <Card className="mb-4">

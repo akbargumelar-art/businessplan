@@ -65,7 +65,7 @@ export default async function DocumentationPage({
   ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="w-full">
       <PageHeader title="Documentation" description="Arsip foto kegiatan, nota, dan dokumentasi rencana." />
 
       <Card className="mb-4">

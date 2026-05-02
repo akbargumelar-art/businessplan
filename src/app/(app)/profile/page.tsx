@@ -13,7 +13,7 @@ export default async function ProfilePage() {
   });
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="w-full space-y-6">
       <PageHeader title="Profil Saya" description="Info akun & tanda tangan digital." />
 
       <Card>

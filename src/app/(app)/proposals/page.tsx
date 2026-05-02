@@ -86,7 +86,7 @@ export default async function ProposalsPage({
   }));
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="w-full">
       <PageHeader
         title="Proposal"
         description="Daftar proposal pengajuan budget."

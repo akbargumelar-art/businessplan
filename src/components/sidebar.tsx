@@ -84,7 +84,7 @@ export function Sidebar({ user }: { user: { name?: string | null; email?: string
     });
   }
 
-  const widthClass = collapsed ? 'lg:w-14' : 'lg:w-56';
+  const widthClass = collapsed ? 'lg:w-16' : 'lg:w-64';
 
   return (
     <aside
@@ -94,19 +94,19 @@ export function Sidebar({ user }: { user: { name?: string | null; email?: string
       )}
       data-hydrated={hydrated}
     >
-      <div className="flex items-center justify-between border-b border-slate-200 px-3 py-3">
+      <div className="flex items-center justify-between border-b border-slate-200 px-3 py-3.5">
         <Link href="/dashboard" className={cn('block min-w-0 flex-1', collapsed && 'hidden')}>
-          <div className="text-sm font-semibold text-blue-700 truncate">Business Plan</div>
+          <div className="text-base font-semibold text-blue-700 truncate">Business Plan</div>
           <div className="text-xs text-slate-500 truncate">Budget Manager</div>
         </Link>
         <button
           type="button"
           onClick={toggle}
-          className="shrink-0 rounded-md p-1 text-slate-500 hover:bg-slate-100"
+          className="shrink-0 rounded-md p-1.5 text-slate-500 hover:bg-slate-100"
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           title={collapsed ? 'Expand' : 'Collapse'}
         >
-          {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          {collapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
         </button>
       </div>
 
@@ -117,7 +117,7 @@ export function Sidebar({ user }: { user: { name?: string | null; email?: string
           return (
             <div key={group.label} className="mb-4">
               {!collapsed && (
-                <div className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                <div className="px-3 mb-1 text-xs font-semibold uppercase tracking-wider text-slate-400">
                   {group.label}
                 </div>
               )}
@@ -131,14 +131,14 @@ export function Sidebar({ user }: { user: { name?: string | null; email?: string
                         href={item.href}
                         title={collapsed ? item.label : undefined}
                         className={cn(
-                          'flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm transition-colors',
+                          'flex items-center gap-3 rounded-md px-3 py-2 text-base transition-colors',
                           collapsed && 'justify-center px-2',
                           active
                             ? 'bg-blue-50 text-blue-700 font-medium'
                             : 'text-slate-700 hover:bg-slate-100',
                         )}
                       >
-                        <Icon className="h-4 w-4 shrink-0" />
+                        <Icon className="h-5 w-5 shrink-0" />
                         {!collapsed && <span className="truncate">{item.label}</span>}
                       </Link>
                     </li>
@@ -152,7 +152,7 @@ export function Sidebar({ user }: { user: { name?: string | null; email?: string
 
       <div className="border-t border-slate-200 px-2 py-2">
         {!collapsed && (
-          <div className="px-2 pb-2">
+          <div className="px-3 pb-2">
             <div className="text-sm font-medium text-slate-900 truncate">{user.name ?? user.email}</div>
             <div className="text-xs text-slate-500 capitalize">{user.role}</div>
           </div>
@@ -161,18 +161,17 @@ export function Sidebar({ user }: { user: { name?: string | null; email?: string
           href="/notifications"
           title={collapsed ? 'Notifikasi' : undefined}
           className={cn(
-            'flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-slate-600 hover:bg-slate-100',
+            'flex items-center gap-3 rounded-md px-3 py-2 text-base text-slate-600 hover:bg-slate-100',
             collapsed ? 'justify-center px-2' : 'justify-between',
           )}
         >
-          <span className="flex items-center gap-2">
-            <Bell className="h-4 w-4 shrink-0" />
+          <span className="flex items-center gap-3">
+            <Bell className="h-5 w-5 shrink-0" />
             {!collapsed && 'Notifikasi'}
           </span>
           {user.unreadCount && user.unreadCount > 0 ? (
             <span className={cn(
-              'rounded-full bg-blue-600 text-white text-xs px-1.5 min-w-[1.1rem] text-center leading-4',
-              collapsed && 'absolute',
+              'rounded-full bg-blue-600 text-white text-xs px-1.5 min-w-[1.25rem] text-center leading-5 font-semibold',
             )}>
               {user.unreadCount}
             </span>
@@ -182,11 +181,11 @@ export function Sidebar({ user }: { user: { name?: string | null; email?: string
           href="/profile"
           title={collapsed ? 'Profile' : undefined}
           className={cn(
-            'flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-slate-600 hover:bg-slate-100',
+            'flex items-center gap-3 rounded-md px-3 py-2 text-base text-slate-600 hover:bg-slate-100',
             collapsed && 'justify-center px-2',
           )}
         >
-          <UserCircle className="h-4 w-4 shrink-0" />
+          <UserCircle className="h-5 w-5 shrink-0" />
           {!collapsed && 'Profile'}
         </Link>
         <form action="/api/auth/signout" method="post">
@@ -194,11 +193,11 @@ export function Sidebar({ user }: { user: { name?: string | null; email?: string
             type="submit"
             title={collapsed ? 'Sign out' : undefined}
             className={cn(
-              'flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-slate-600 hover:bg-slate-100',
+              'flex w-full items-center gap-3 rounded-md px-3 py-2 text-base text-slate-600 hover:bg-slate-100',
               collapsed && 'justify-center px-2',
             )}
           >
-            <LogOut className="h-4 w-4 shrink-0" />
+            <LogOut className="h-5 w-5 shrink-0" />
             {!collapsed && 'Sign out'}
           </button>
         </form>

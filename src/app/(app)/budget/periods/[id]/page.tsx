@@ -32,7 +32,7 @@ export default async function PeriodDetailPage({ params }: { params: Promise<{ i
   const utilization = percent(totals.absorbed, totals.allocated);
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="w-full">
       <PageHeader
         title={period.name}
         description={`${formatDate(period.startDate)} – ${formatDate(period.endDate)}`}

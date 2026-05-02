@@ -15,7 +15,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <Sidebar user={navUser} />
       <div className="flex min-w-0 flex-1 flex-col">
         <MobileNav user={navUser} />
-        <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
+        {/* Full-width edge-to-edge — small padding only on the smallest screens */}
+        <main className="flex-1 w-full px-3 py-4 sm:px-4 sm:py-5">{children}</main>
       </div>
     </div>
   );

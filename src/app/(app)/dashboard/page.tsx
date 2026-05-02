@@ -28,7 +28,7 @@ export default async function DashboardPage({
 
   if (periods.length === 0) {
     return (
-      <div className="max-w-3xl mx-auto">
+      <div className="w-full">
         <PageHeader title="Dashboard" />
         <EmptyState>
           Belum ada periode budget. <Link href="/budget/periods" className="text-blue-700 hover:underline">Buat periode pertama</Link> dulu.
@@ -87,7 +87,7 @@ export default async function DashboardPage({
     : [];
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="w-full">
       <PageHeader
         title="Dashboard"
         description={`Periode ${period.name}`}

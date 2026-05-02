@@ -33,7 +33,7 @@ export default async function ReallocationDetailPage({ params }: { params: Promi
   const canReject = (r.status === 'submitted' || r.status === 'supervisor_reviewed') && canApproveReallocation(user.role, 'supervisor');
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="w-full">
       <PageHeader
         title={`Reallocation #${r.id}`}
         description={<Badge variant={r.type === 'reversal' ? 'red' : r.type === 'topup' ? 'green' : 'blue'}>{r.type}</Badge>}

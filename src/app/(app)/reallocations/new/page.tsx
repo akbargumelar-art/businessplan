@@ -27,7 +27,7 @@ export default async function NewReallocationPage() {
   const today = new Date().toISOString().slice(0, 10);
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="w-full">
       <PageHeader
         title="Reallocation Baru"
         description="Ajukan pengalihan dana antar alokasi. Transfer butuh sumber + target, top-up hanya butuh target."

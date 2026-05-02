@@ -19,7 +19,7 @@ export default async function NotificationsPage() {
   const unreadCount = items.filter((i) => !i.readAt).length;
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="w-full">
       <PageHeader
         title="Notifikasi"
         description={unreadCount > 0 ? `${unreadCount} belum dibaca` : 'Semua sudah dibaca'}

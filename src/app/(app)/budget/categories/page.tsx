@@ -47,7 +47,7 @@ export default async function CategoriesPage() {
   }));
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="w-full">
       <PageHeader
         title="Kategori Budget"
         description="Kelola kategori dasar (mis. Promo Trade, Promo Konsumen, Program Edukasi)"

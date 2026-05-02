@@ -66,7 +66,7 @@ export default async function PeriodsPage() {
   const now = new Date();
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="w-full">
       <PageHeader
         title="Periode Budget"
         description="Kelola periode bulanan dan total alokasinya."

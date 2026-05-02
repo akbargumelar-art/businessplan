@@ -38,7 +38,7 @@ export default async function ProposalDetailPage({ params }: { params: Promise<{
   const overBudget = toNumber(proposal.totalBudget) > available;
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="w-full">
       <PageHeader
         title={proposal.title}
         description={proposal.number ?? 'Belum bernomor (draft)'}

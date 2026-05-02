@@ -12,7 +12,7 @@ export default async function NewProposalPage() {
   const allocations = await listAvailableAllocations();
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="w-full">
       <PageHeader
         title="Proposal Baru"
         description="Isi form lengkap. Akan tersimpan sebagai draft, finalize untuk dapat nomor."

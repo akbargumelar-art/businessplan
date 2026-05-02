@@ -35,7 +35,7 @@ export default async function NewLpjPage({
   }));
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="w-full">
       <PageHeader
         title="Buat LPJ"
         description={`Untuk proposal: ${proposal.title}`}

@@ -43,7 +43,7 @@ export default async function LpjDetailPage({ params }: { params: Promise<{ id: 
   const canReject = (lpj.status === 'submitted' || lpj.status === 'supervisor_reviewed') && canApproveLpj(user.role, 'supervisor');
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="w-full">
       <PageHeader
         title={`LPJ: ${lpj.proposal.title}`}
         description={lpj.proposal.number ?? '-'}
