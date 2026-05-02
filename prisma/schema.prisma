@@ -248,6 +248,7 @@ model OrganizationSettings {
   witnessSignaturePath  String? @map("witness_signature_path")  // Mengetahui (SPV MCOT)
   vpSignaturePath       String? @map("vp_signature_path")
   finDirSignaturePath   String? @map("fin_dir_signature_path")
+  logoImagePath         String? @map("logo_image_path")         // Logo perusahaan untuk PDF header
   updatedAt       DateTime @updatedAt @map("updated_at")
 
   @@map("organization_settings")

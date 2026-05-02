@@ -21,6 +21,7 @@ const DEFAULTS: OrgSettingsForPdf = {
   witnessSignaturePath: null,
   vpSignaturePath: null,
   finDirSignaturePath: null,
+  logoImagePath: null,
 };
 
 export async function getOrgSettings(): Promise<OrgSettingsForPdf> {
@@ -46,6 +47,7 @@ export async function getOrgSettings(): Promise<OrgSettingsForPdf> {
     witnessSignaturePath: row.witnessSignaturePath,
     vpSignaturePath: row.vpSignaturePath,
     finDirSignaturePath: row.finDirSignaturePath,
+    logoImagePath: row.logoImagePath,
   };
 }
 

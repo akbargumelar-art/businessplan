@@ -14,9 +14,9 @@ const variantClass: Record<Variant, string> = {
 };
 
 const sizeClass: Record<Size, string> = {
-  sm: 'h-8 px-3 text-xs',
-  md: 'h-9 px-4 text-sm',
-  lg: 'h-11 px-6 text-base',
+  sm: 'h-9 px-3 text-sm',
+  md: 'h-10 px-4 text-sm sm:text-base',
+  lg: 'h-12 px-6 text-base sm:text-lg',
 };
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {

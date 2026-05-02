@@ -50,6 +50,49 @@ export async function uploadOrgSignature(formData: FormData) {
   revalidatePath('/admin/settings');
 }
 
+export async function uploadOrgLogo(formData: FormData) {
+  const me = await requireRole('admin');
+  const file = formData.get('file') as File | null;
+  if (!file || !(file instanceof File) || file.size === 0) throw new Error('File tidak valid');
+
+  const saved = await saveUpload(file, 'logos');
+
+  const existing = await prisma.organizationSettings.findFirst();
+  if (existing) {
+    if (existing.logoImagePath) await deleteUpload(existing.logoImagePath);
+    await prisma.organizationSettings.update({
+      where: { id: existing.id },
+      data: { logoImagePath: saved.filePath },
+    });
+  } else {
+    await prisma.organizationSettings.create({
+      data: {
+        companyName: 'Company',
+        brandLine1: 'PROPOSAL',
+        brandLine2: 'KEGIATAN PERMOHONAN BUDGET',
+        logoImagePath: saved.filePath,
+      },
+    });
+  }
+
+  await logAudit({ entity: 'user', entityId: 0, action: 'org_logo:upload', actorId: me.id });
+  revalidatePath('/admin/settings');
+}
+
+export async function deleteOrgLogo() {
+  const me = await requireRole('admin');
+  const existing = await prisma.organizationSettings.findFirst();
+  if (existing && existing.logoImagePath) {
+    await deleteUpload(existing.logoImagePath);
+    await prisma.organizationSettings.update({
+      where: { id: existing.id },
+      data: { logoImagePath: null },
+    });
+    await logAudit({ entity: 'user', entityId: 0, action: 'org_logo:delete', actorId: me.id });
+    revalidatePath('/admin/settings');
+  }
+}
+
 export async function deleteOrgSignature(slot: 'approver' | 'witness' | 'vp' | 'finDir') {
   const me = await requireRole('admin');
   const field = SLOT_TO_FIELD[slot];

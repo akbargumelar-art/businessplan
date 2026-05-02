@@ -7,7 +7,7 @@ import { requireUser, isAdmin } from '@/lib/permissions';
 import { saveUpload, deleteUpload } from '@/lib/upload';
 import { logAudit } from '@/lib/audit';
 
-const TYPES = ['receipt', 'documentation'] as const;
+const TYPES = ['receipt', 'documentation', 'report'] as const;
 
 const baseSchema = z.object({
   lpjId: z.coerce.number().int().positive(),
@@ -31,7 +31,11 @@ export async function uploadLpjAttachment(formData: FormData) {
   const lpj = await prisma.lpj.findUniqueOrThrow({ where: { id: data.lpjId } });
   if (lpj.createdById !== user.id && !isAdmin(user.role)) throw new Error('Forbidden');
 
-  const saved = await saveUpload(file, `lpj/${data.lpjId}`);
+  // "report" type accepts Office files (xlsx/docx/pptx) up to 10MB.
+  const saved = await saveUpload(file, `lpj/${data.lpjId}`, {
+    allowOffice: data.type === 'report',
+    maxBytes: data.type === 'report' ? 10 * 1024 * 1024 : undefined,
+  });
 
   const created = await prisma.lpjAttachment.create({
     data: {

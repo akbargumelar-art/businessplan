@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input, FormField, Select, Textarea } from '@/components/ui/input';
 import { updateOrgSettings } from '@/server/actions/org';
 import { OrgSignatureUploads } from '@/components/org-signature-uploads';
+import { OrgLogoUpload } from '@/components/org-logo-upload';
 
 async function updateNumberingConfig(formData: FormData) {
   'use server';
@@ -140,6 +141,19 @@ export default async function SettingsPage() {
 
             <Button type="submit">Simpan Identitas Perusahaan</Button>
           </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Logo Perusahaan (PDF Header)</CardTitle>
+          <p className="text-sm text-slate-500 mt-1">
+            Upload logo untuk muncul di kanan atas PDF proposal. Kalau kosong,
+            PDF pakai &ldquo;Logo Text&rdquo; di atas.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <OrgLogoUpload existing={org.logoImagePath} />
         </CardContent>
       </Card>
 

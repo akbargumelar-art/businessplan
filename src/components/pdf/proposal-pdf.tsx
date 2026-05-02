@@ -22,6 +22,7 @@ export type OrgSettingsForPdf = {
   witnessSignaturePath?: string | null;
   vpSignaturePath?: string | null;
   finDirSignaturePath?: string | null;
+  logoImagePath?: string | null;
 };
 
 const PROGRAM_TYPES = [
@@ -45,6 +46,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10, paddingVertical: 4,
     fontSize: 11, fontWeight: 700, color: '#f97316',
   },
+  logoImage: { maxHeight: 50, maxWidth: 150, objectFit: 'contain' },
   numberRow: { flexDirection: 'row', marginBottom: 3, fontSize: 9 },
   numberLabel: { width: 130, fontWeight: 700 },
   numberSep: { width: 10, textAlign: 'left' },
@@ -176,9 +178,13 @@ export function ProposalPdf({
             {org.brandLine3 && <Text style={styles.brandSub}>{org.brandLine3}</Text>}
           </View>
           <View style={styles.headerRight}>
-            <View style={styles.logoBox}>
-              <Text>{org.logoText ?? org.companyName}</Text>
-            </View>
+            {org.logoImagePath ? (
+              <Image src={toImageSrc(org.logoImagePath)} style={styles.logoImage} />
+            ) : (
+              <View style={styles.logoBox}>
+                <Text>{org.logoText ?? org.companyName}</Text>
+              </View>
+            )}
           </View>
         </View>
 
