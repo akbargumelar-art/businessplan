@@ -73,6 +73,8 @@ export async function saveUpload(file: File, subdir = 'misc', opts: UploadOption
 export async function deleteUpload(publicPath: string) {
   if (!publicPath.startsWith('/uploads/')) return;
   const rel = publicPath.replace(/^\/uploads\//, '');
-  const full = path.join(UPLOAD_ROOT, rel);
+  const root = path.resolve(UPLOAD_ROOT);
+  const full = path.resolve(root, rel);
+  if (full !== root && !full.startsWith(root + path.sep)) return;
   await fs.unlink(full).catch(() => {});
 }

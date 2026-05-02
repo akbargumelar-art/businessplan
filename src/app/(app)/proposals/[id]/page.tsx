@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
-import { requireUser, isAdmin } from '@/lib/permissions';
+import { requireUser, isAdmin, canViewOwnedBy } from '@/lib/permissions';
 import { toNumber, formatIDR, formatDate } from '@/lib/format';
 import { getAvailableForAllocation } from '@/lib/budget';
 import { PageHeader } from '@/components/ui/page-header';
@@ -22,12 +22,13 @@ export default async function ProposalDetailPage({ params }: { params: Promise<{
     include: {
       items: { orderBy: { sortOrder: 'asc' } },
       allocation: { include: { category: true, period: true } },
-      createdBy: { select: { name: true, email: true } },
+      createdBy: { select: { name: true, email: true, supervisorId: true } },
       lpj: true,
       attachments: true,
     },
   });
   if (!proposal) notFound();
+  if (!canViewOwnedBy(user, proposal.createdById, proposal.createdBy.supervisorId)) notFound();
 
   const canEdit = proposal.status === 'draft' && (proposal.createdById === user.id || isAdmin(user.role));
   const canFinalize = canEdit;

@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { createElement, type ReactElement } from 'react';
 import { renderToBuffer, type DocumentProps } from '@react-pdf/renderer';
 import { prisma } from '@/lib/prisma';
-import { requireUser } from '@/lib/permissions';
+import { canViewOwnedBy, requireUser } from '@/lib/permissions';
 import { ProposalPdf } from '@/components/pdf/proposal-pdf';
 import { getOrgSettings } from '@/lib/org';
 
@@ -12,7 +12,7 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  await requireUser();
+  const user = await requireUser();
   const { id } = await params;
   const [proposal, org] = await Promise.all([
     prisma.proposal.findUnique({
@@ -21,12 +21,15 @@ export async function GET(
         items: { orderBy: { sortOrder: 'asc' } },
         attachments: true,
         allocation: { include: { category: true, period: true } },
-        createdBy: { select: { name: true, email: true, signatureImagePath: true } },
+        createdBy: { select: { name: true, email: true, signatureImagePath: true, supervisorId: true } },
       },
     }),
     getOrgSettings(),
   ]);
   if (!proposal) return new Response('Not found', { status: 404 });
+  if (!canViewOwnedBy(user, proposal.createdById, proposal.createdBy.supervisorId)) {
+    return new Response('Not found', { status: 404 });
+  }
 
   const attachmentBase = `${req.nextUrl.protocol}//${req.nextUrl.host}`;
   const element = createElement(ProposalPdf, { proposal, org, attachmentBase }) as unknown as ReactElement<DocumentProps>;

@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
-import { requireUser, isAdmin, canApproveReallocation } from '@/lib/permissions';
+import { requireUser, isAdmin, canApproveReallocation, canReviewOwnedBy } from '@/lib/permissions';
 import { logAudit } from '@/lib/audit';
 import { getAvailableForAllocation } from '@/lib/budget';
 import { toNumber } from '@/lib/format';
@@ -89,7 +89,11 @@ export async function submitReallocation(id: number) {
 export async function reviewReallocation(id: number) {
   const user = await requireUser();
   if (!canApproveReallocation(user.role, 'supervisor')) throw new Error('Forbidden');
-  const r = await prisma.budgetReallocation.findUniqueOrThrow({ where: { id } });
+  const r = await prisma.budgetReallocation.findUniqueOrThrow({
+    where: { id },
+    include: { requestedBy: { select: { supervisorId: true } } },
+  });
+  if (!canReviewOwnedBy(user, r.requestedById, r.requestedBy.supervisorId)) throw new Error('Forbidden');
   if (r.status !== 'submitted') throw new Error('Status tidak valid');
   await prisma.budgetReallocation.update({
     where: { id }, data: { status: 'supervisor_reviewed', reviewedAt: new Date() },
@@ -196,7 +200,11 @@ export async function rejectReallocation(id: number, note: string) {
   const user = await requireUser();
   if (!canApproveReallocation(user.role, 'supervisor')) throw new Error('Forbidden');
   if (!note || note.length < 5) throw new Error('Alasan reject minimal 5 karakter');
-  const r = await prisma.budgetReallocation.findUniqueOrThrow({ where: { id } });
+  const r = await prisma.budgetReallocation.findUniqueOrThrow({
+    where: { id },
+    include: { requestedBy: { select: { supervisorId: true } } },
+  });
+  if (!canReviewOwnedBy(user, r.requestedById, r.requestedBy.supervisorId)) throw new Error('Forbidden');
   await prisma.budgetReallocation.update({
     where: { id }, data: { status: 'rejected', rejectionNote: note },
   });

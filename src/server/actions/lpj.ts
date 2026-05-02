@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
-import { requireUser, isAdmin, canApproveLpj } from '@/lib/permissions';
+import { requireUser, isAdmin, canApproveLpj, canReviewOwnedBy } from '@/lib/permissions';
 import { logAudit } from '@/lib/audit';
 import { postLpjRealization } from '@/lib/budget';
 import { notify, getNextLpjApprovers } from '@/lib/notify';
@@ -115,7 +115,8 @@ export async function updateLpj(id: number, formData: FormData) {
 export async function submitLpj(id: number) {
   const user = await requireUser();
   const lpj = await prisma.lpj.findUniqueOrThrow({
-    where: { id }, include: { proposal: true, createdBy: true },
+    where: { id },
+    include: { proposal: true, createdBy: { select: { name: true, supervisorId: true } } },
   });
   if (lpj.status !== 'draft') throw new Error('Hanya draft yang bisa submit');
   if (lpj.createdById !== user.id && !isAdmin(user.role)) throw new Error('Forbidden');
@@ -142,8 +143,10 @@ export async function reviewLpj(id: number) {
   const user = await requireUser();
   if (!canApproveLpj(user.role, 'supervisor')) throw new Error('Forbidden');
   const lpj = await prisma.lpj.findUniqueOrThrow({
-    where: { id }, include: { proposal: true, createdBy: true },
+    where: { id },
+    include: { proposal: true, createdBy: { select: { supervisorId: true } } },
   });
+  if (!canReviewOwnedBy(user, lpj.createdById, lpj.createdBy.supervisorId)) throw new Error('Forbidden');
   if (lpj.status !== 'submitted') throw new Error('Hanya status submitted yang bisa di-review');
   await prisma.lpj.update({
     where: { id },
@@ -202,8 +205,10 @@ export async function rejectLpj(id: number, note: string) {
   if (!canApproveLpj(user.role, 'supervisor')) throw new Error('Forbidden');
   if (!note || note.length < 5) throw new Error('Alasan reject minimal 5 karakter');
   const lpj = await prisma.lpj.findUniqueOrThrow({
-    where: { id }, include: { proposal: true },
+    where: { id },
+    include: { proposal: true, createdBy: { select: { supervisorId: true } } },
   });
+  if (!canReviewOwnedBy(user, lpj.createdById, lpj.createdBy.supervisorId)) throw new Error('Forbidden');
   await prisma.lpj.update({
     where: { id },
     data: { status: 'rejected', rejectionNote: note },

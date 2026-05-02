@@ -42,6 +42,27 @@ export function isSupervisor(role: Role) {
   return role === 'supervisor';
 }
 
+export function canViewOwnedBy(
+  user: Pick<AuthUser, 'id' | 'role'>,
+  ownerId: number,
+  ownerSupervisorId?: number | null,
+) {
+  if (user.role === 'admin') return true;
+  if (user.role === 'supervisor') {
+    return ownerId === user.id || ownerSupervisorId === user.id;
+  }
+  return ownerId === user.id;
+}
+
+export function canReviewOwnedBy(
+  user: Pick<AuthUser, 'id' | 'role'>,
+  ownerId: number,
+  ownerSupervisorId?: number | null,
+) {
+  if (user.role === 'admin') return true;
+  return user.role === 'supervisor' && (ownerId === user.id || ownerSupervisorId === user.id);
+}
+
 export function canManageBudget(role: Role) {
   return role === 'admin' || role === 'supervisor';
 }

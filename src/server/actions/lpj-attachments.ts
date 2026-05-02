@@ -30,6 +30,9 @@ export async function uploadLpjAttachment(formData: FormData) {
 
   const lpj = await prisma.lpj.findUniqueOrThrow({ where: { id: data.lpjId } });
   if (lpj.createdById !== user.id && !isAdmin(user.role)) throw new Error('Forbidden');
+  if (lpj.status !== 'draft' && lpj.status !== 'rejected') {
+    throw new Error('Lampiran hanya bisa diubah saat LPJ masih draft atau rejected');
+  }
 
   // "report" type accepts Office files (xlsx/docx/pptx) up to 10MB.
   const saved = await saveUpload(file, `lpj/${data.lpjId}`, {
@@ -72,6 +75,9 @@ export async function deleteLpjAttachment(attachmentId: number) {
     include: { lpj: true },
   });
   if (att.lpj.createdById !== user.id && !isAdmin(user.role)) throw new Error('Forbidden');
+  if (att.lpj.status !== 'draft' && att.lpj.status !== 'rejected') {
+    throw new Error('Lampiran hanya bisa diubah saat LPJ masih draft atau rejected');
+  }
 
   // Unlink from items first
   await prisma.lpjItem.updateMany({

@@ -52,10 +52,6 @@ export default async function LoginPage({
           </div>
           <Button type="submit" className="w-full">Sign in</Button>
         </form>
-
-        <p className="mt-6 text-center text-xs text-slate-500">
-          Default: admin@local / admin123 — ganti di first login.
-        </p>
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
-import { requireUser, isAdmin, canApproveLpj } from '@/lib/permissions';
+import { requireUser, isAdmin, canApproveLpj, canViewOwnedBy } from '@/lib/permissions';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, THead, TBody, Tr, Th, Td } from '@/components/ui/table';
@@ -23,10 +23,11 @@ export default async function LpjDetailPage({ params }: { params: Promise<{ id: 
       items: true,
       attachments: { orderBy: { createdAt: 'desc' } },
       proposal: { include: { allocation: { include: { category: true, period: true } }, createdBy: true } },
-      createdBy: true,
+      createdBy: { select: { id: true, name: true, supervisorId: true } },
     },
   });
   if (!lpj) notFound();
+  if (!canViewOwnedBy(user, lpj.createdById, lpj.createdBy.supervisorId)) notFound();
 
   const audits = await prisma.auditLog.findMany({
     where: { entityType: 'lpj', entityId: lpjId },

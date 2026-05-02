@@ -3,6 +3,7 @@ import Credentials from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { prisma } from './prisma';
+import { authConfig } from './auth.config';
 import type { Role } from '@/types/enums';
 
 declare module 'next-auth' {
@@ -21,10 +22,7 @@ const credsSchema = z.object({
 });
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  session: { strategy: 'jwt' },
-  pages: {
-    signIn: '/login',
-  },
+  ...authConfig,
   providers: [
     Credentials({
       name: 'Credentials',
@@ -54,32 +52,4 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
   ],
-  callbacks: {
-    jwt: async ({ token, user }) => {
-      if (user) {
-        const u = user as { id?: string; role?: Role; department?: string | null };
-        (token as Record<string, unknown>).id = Number(u.id);
-        (token as Record<string, unknown>).role = u.role;
-        (token as Record<string, unknown>).department = u.department ?? null;
-      }
-      return token;
-    },
-    session: async ({ session, token }) => {
-      if (token && session.user) {
-        const t = token as Record<string, unknown>;
-        // We keep id as string for compat with NextAuth default type;
-        // permissions.requireUser() converts to number.
-        session.user.id = String(t.id);
-        (session.user as { role?: Role }).role = t.role as Role;
-        (session.user as { department?: string | null }).department = (t.department as string | null | undefined) ?? null;
-      }
-      return session;
-    },
-    authorized: async ({ auth, request }) => {
-      const { pathname } = request.nextUrl;
-      const isPublic = pathname === '/login' || pathname.startsWith('/api/auth');
-      if (isPublic) return true;
-      return !!auth;
-    },
-  },
 });

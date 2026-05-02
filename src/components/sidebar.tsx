@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { signOut } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import {
   LayoutDashboard,
@@ -188,19 +189,18 @@ export function Sidebar({ user }: { user: { name?: string | null; email?: string
           <UserCircle className="h-5 w-5 shrink-0" />
           {!collapsed && 'Profile'}
         </Link>
-        <form action="/api/auth/signout" method="post">
-          <button
-            type="submit"
-            title={collapsed ? 'Sign out' : undefined}
-            className={cn(
-              'flex w-full items-center gap-3 rounded-md px-3 py-2 text-base text-slate-600 hover:bg-slate-100',
-              collapsed && 'justify-center px-2',
-            )}
-          >
-            <LogOut className="h-5 w-5 shrink-0" />
-            {!collapsed && 'Sign out'}
-          </button>
-        </form>
+        <button
+          type="button"
+          onClick={() => void signOut({ redirectTo: '/login' })}
+          title={collapsed ? 'Sign out' : undefined}
+          className={cn(
+            'flex w-full items-center gap-3 rounded-md px-3 py-2 text-base text-slate-600 hover:bg-slate-100',
+            collapsed && 'justify-center px-2',
+          )}
+        >
+          <LogOut className="h-5 w-5 shrink-0" />
+          {!collapsed && 'Sign out'}
+        </button>
       </div>
     </aside>
   );

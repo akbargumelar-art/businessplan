@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
-import { requireUser, isAdmin, canApproveReallocation } from '@/lib/permissions';
+import { requireUser, isAdmin, canApproveReallocation, canViewOwnedBy } from '@/lib/permissions';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatusBadge, Badge } from '@/components/ui/badge';
@@ -20,11 +20,12 @@ export default async function ReallocationDetailPage({ params }: { params: Promi
     include: {
       sourceAllocation: { include: { category: true, period: true } },
       targetAllocation: { include: { category: true, period: true } },
-      requestedBy: true,
+      requestedBy: { select: { id: true, name: true, supervisorId: true } },
       relatedProposal: true,
     },
   });
   if (!r) notFound();
+  if (!canViewOwnedBy(user, r.requestedById, r.requestedBy.supervisorId)) notFound();
 
   const isOwner = r.requestedById === user.id;
   const canSubmit = r.status === 'draft' && (isOwner || isAdmin(user.role));

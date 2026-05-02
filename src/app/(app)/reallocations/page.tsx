@@ -10,9 +10,16 @@ import { formatIDR, formatDate, toNumber } from '@/lib/format';
 export default async function ReallocationsPage() {
   const user = await requireUser();
 
-  const where = user.role === 'admin' || user.role === 'supervisor'
+  const where = user.role === 'admin'
     ? {}
-    : { requestedById: user.id };
+    : user.role === 'supervisor'
+      ? {
+          OR: [
+            { requestedById: user.id },
+            { requestedBy: { supervisorId: user.id } },
+          ],
+        }
+      : { requestedById: user.id };
 
   const list = await prisma.budgetReallocation.findMany({
     where,
