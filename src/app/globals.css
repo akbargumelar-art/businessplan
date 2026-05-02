@@ -17,10 +17,12 @@ html, body {
   background-color: var(--color-bg);
   color: var(--color-text);
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  /* Single base — 14px throughout. Tailwind text-sm = 0.875rem = 12.25px,
-     text-base = 1rem = 14px, text-lg = 1.125rem = 15.75px, text-xs = 10.5px.
-     Konsisten di semua device, no responsive bump. */
-  font-size: 14px;
+  /* Base 15.5px = 110% dari 14px — matches browser zoom 110% feel.
+     Karena Tailwind size utilities pakai rem (text-sm = 0.875rem,
+     h-9 = 2.25rem, p-4 = 1rem, dll), semua spacing & font scales
+     proporsional 10% lebih besar — sama seperti efek browser zoom 110%.
+     Effective sizes: text-xs=11.6 / text-sm=13.6 / text-base=15.5 / text-lg=17.4. */
+  font-size: 15.5px;
   line-height: 1.5;
   -webkit-text-size-adjust: 100%;
   -webkit-font-smoothing: antialiased;
