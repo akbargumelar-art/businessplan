@@ -16,6 +16,7 @@ import {
   CalendarRange,
   Users,
   UserCircle,
+  Bell,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import type { Role } from '@/types/enums';
@@ -60,7 +61,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
   },
 ];
 
-export function Sidebar({ user }: { user: { name?: string | null; email?: string | null; role: Role } }) {
+export function Sidebar({ user }: { user: { name?: string | null; email?: string | null; role: Role; unreadCount?: number } }) {
   const pathname = usePathname();
 
   return (
@@ -113,6 +114,18 @@ export function Sidebar({ user }: { user: { name?: string | null; email?: string
           <div className="text-sm font-medium text-slate-900 truncate">{user.name ?? user.email}</div>
           <div className="text-xs text-slate-500 capitalize">{user.role}</div>
         </div>
+        <Link
+          href="/notifications"
+          className="flex w-full items-center justify-between rounded-md px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100"
+        >
+          <span className="flex items-center gap-2">
+            <Bell className="h-4 w-4" />
+            Notifikasi
+          </span>
+          {user.unreadCount && user.unreadCount > 0 ? (
+            <span className="rounded-full bg-blue-600 text-white text-xs px-1.5 py-0.5 min-w-5 text-center">{user.unreadCount}</span>
+          ) : null}
+        </Link>
         <Link
           href="/profile"
           className="flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100"

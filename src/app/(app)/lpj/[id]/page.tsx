@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/input';
 import { formatIDR, formatDate, toNumber } from '@/lib/format';
 import { submitLpj, reviewLpj, approveLpj, rejectLpj } from '@/server/actions/lpj';
+import { LpjAttachmentUpload } from '@/components/lpj-attachment-upload';
 
 export default async function LpjDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -20,6 +21,7 @@ export default async function LpjDetailPage({ params }: { params: Promise<{ id: 
     where: { id: lpjId },
     include: {
       items: true,
+      attachments: { orderBy: { createdAt: 'desc' } },
       proposal: { include: { allocation: { include: { category: true, period: true } }, createdBy: true } },
       createdBy: true,
     },
@@ -123,6 +125,21 @@ export default async function LpjDetailPage({ params }: { params: Promise<{ id: 
               <CardContent className="text-sm whitespace-pre-wrap">{lpj.evaluation}</CardContent>
             </Card>
           )}
+
+          <Card>
+            <CardHeader><CardTitle>Lampiran Nota & Dokumentasi</CardTitle></CardHeader>
+            <CardContent>
+              <LpjAttachmentUpload
+                lpjId={lpjId}
+                attachments={lpj.attachments.map((a) => ({
+                  id: a.id, type: a.type, filePath: a.filePath, fileType: a.fileType,
+                  label: a.label, itemRef: a.itemRef,
+                }))}
+                items={lpj.items.map((i) => ({ id: i.id, name: i.name }))}
+                canEdit={canEdit}
+              />
+            </CardContent>
+          </Card>
 
           {canReject && (
             <Card>

@@ -5,6 +5,65 @@ import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 import { requireRole } from '@/lib/permissions';
 import { logAudit } from '@/lib/audit';
+import { saveUpload, deleteUpload } from '@/lib/upload';
+
+const SIGNATURE_SLOTS = ['approver', 'witness', 'vp', 'finDir'] as const;
+type SignatureSlot = typeof SIGNATURE_SLOTS[number];
+
+const SLOT_TO_FIELD: Record<SignatureSlot, 'approverSignaturePath' | 'witnessSignaturePath' | 'vpSignaturePath' | 'finDirSignaturePath'> = {
+  approver: 'approverSignaturePath',
+  witness: 'witnessSignaturePath',
+  vp: 'vpSignaturePath',
+  finDir: 'finDirSignaturePath',
+};
+
+export async function uploadOrgSignature(formData: FormData) {
+  const me = await requireRole('admin');
+  const slot = String(formData.get('slot') ?? '') as SignatureSlot;
+  if (!SIGNATURE_SLOTS.includes(slot)) throw new Error('Slot tidak valid');
+  const file = formData.get('file') as File | null;
+  if (!file || !(file instanceof File) || file.size === 0) throw new Error('File tidak valid');
+
+  const saved = await saveUpload(file, 'signatures');
+  const field = SLOT_TO_FIELD[slot];
+
+  const existing = await prisma.organizationSettings.findFirst();
+  if (existing) {
+    const oldPath = existing[field];
+    if (oldPath) await deleteUpload(oldPath);
+    await prisma.organizationSettings.update({
+      where: { id: existing.id },
+      data: { [field]: saved.filePath },
+    });
+  } else {
+    await prisma.organizationSettings.create({
+      data: {
+        companyName: 'Company',
+        brandLine1: 'PROPOSAL',
+        brandLine2: 'KEGIATAN PERMOHONAN BUDGET',
+        [field]: saved.filePath,
+      },
+    });
+  }
+
+  await logAudit({ entity: 'user', entityId: 0, action: `org_signature:${slot}`, actorId: me.id });
+  revalidatePath('/admin/settings');
+}
+
+export async function deleteOrgSignature(slot: 'approver' | 'witness' | 'vp' | 'finDir') {
+  const me = await requireRole('admin');
+  const field = SLOT_TO_FIELD[slot];
+  const existing = await prisma.organizationSettings.findFirst();
+  if (existing && existing[field]) {
+    await deleteUpload(existing[field] as string);
+    await prisma.organizationSettings.update({
+      where: { id: existing.id },
+      data: { [field]: null },
+    });
+    await logAudit({ entity: 'user', entityId: 0, action: `org_signature:delete:${slot}`, actorId: me.id });
+    revalidatePath('/admin/settings');
+  }
+}
 
 const schema = z.object({
   companyName: z.string().min(1).max(200),

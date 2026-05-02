@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input, FormField, Select, Textarea } from '@/components/ui/input';
 import { updateOrgSettings } from '@/server/actions/org';
+import { OrgSignatureUploads } from '@/components/org-signature-uploads';
 
 async function updateNumberingConfig(formData: FormData) {
   'use server';
@@ -139,6 +140,26 @@ export default async function SettingsPage() {
 
             <Button type="submit">Simpan Identitas Perusahaan</Button>
           </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Tanda Tangan Digital — Pejabat Tetap</CardTitle>
+          <p className="text-sm text-slate-500 mt-1">
+            Upload sekali, otomatis di-embed di semua PDF proposal.
+            Idealnya PNG dengan background transparan, ukuran ~200×80 px.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <OrgSignatureUploads
+            signatures={{
+              approver: org.approverSignaturePath,
+              witness: org.witnessSignaturePath,
+              vp: org.vpSignaturePath,
+              finDir: org.finDirSignaturePath,
+            }}
+          />
         </CardContent>
       </Card>
     </div>

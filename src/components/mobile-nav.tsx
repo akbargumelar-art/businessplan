@@ -6,7 +6,7 @@ import { Menu, X } from 'lucide-react';
 import type { Role } from '@/types/enums';
 import { Sidebar } from './sidebar';
 
-export function MobileNav({ user }: { user: { name?: string | null; email?: string | null; role: Role } }) {
+export function MobileNav({ user }: { user: { name?: string | null; email?: string | null; role: Role; unreadCount?: number } }) {
   const [open, setOpen] = useState(false);
 
   return (

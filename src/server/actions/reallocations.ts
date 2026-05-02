@@ -9,6 +9,7 @@ import { requireUser, isAdmin, canApproveReallocation } from '@/lib/permissions'
 import { logAudit } from '@/lib/audit';
 import { getAvailableForAllocation } from '@/lib/budget';
 import { toNumber } from '@/lib/format';
+import { notify, getNextReallocationApprovers } from '@/lib/notify';
 
 const schema = z.object({
   type: z.enum(['transfer', 'topup', 'reversal']).default('transfer'),
@@ -62,13 +63,25 @@ export async function createReallocation(formData: FormData) {
 
 export async function submitReallocation(id: number) {
   const user = await requireUser();
-  const r = await prisma.budgetReallocation.findUniqueOrThrow({ where: { id } });
+  const r = await prisma.budgetReallocation.findUniqueOrThrow({
+    where: { id }, include: { sourceAllocation: { include: { category: true } }, requestedBy: true },
+  });
   if (r.status !== 'draft') throw new Error('Hanya draft yang bisa submit');
   if (r.requestedById !== user.id && !isAdmin(user.role)) throw new Error('Forbidden');
   await prisma.budgetReallocation.update({
     where: { id }, data: { status: 'submitted' },
   });
   await logAudit({ entity: 'reallocation', entityId: id, action: 'submit', actorId: user.id });
+
+  const recipients = await getNextReallocationApprovers('submitted', r.requestedById);
+  await notify({
+    userIds: recipients,
+    type: 'reallocation.submitted',
+    title: `Reallocation ${r.type} menunggu review (#${id})`,
+    body: `${r.requestedBy.name} mengajukan ${r.type} dari ${r.sourceAllocation.category.name} sebesar ${toNumber(r.amount).toLocaleString('id-ID')}.`,
+    link: `/reallocations/${id}`,
+  });
+
   revalidatePath(`/reallocations/${id}`);
   revalidatePath('/reallocations');
 }
@@ -82,6 +95,16 @@ export async function reviewReallocation(id: number) {
     where: { id }, data: { status: 'supervisor_reviewed', reviewedAt: new Date() },
   });
   await logAudit({ entity: 'reallocation', entityId: id, action: 'review', actorId: user.id });
+
+  const recipients = await getNextReallocationApprovers('supervisor_reviewed', r.requestedById);
+  await notify({
+    userIds: recipients,
+    type: 'reallocation.supervisor_reviewed',
+    title: `Reallocation menunggu approve admin (#${id})`,
+    body: `Sudah di-review supervisor. Menunggu final approval admin.`,
+    link: `/reallocations/${id}`,
+  });
+
   revalidatePath(`/reallocations/${id}`);
 }
 
@@ -154,6 +177,15 @@ export async function approveReallocation(id: number) {
     await logAudit({ entity: 'reallocation', entityId: id, action: 'approve', actorId: user.id, before, after, tx });
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 
+  const final = await prisma.budgetReallocation.findUniqueOrThrow({ where: { id } });
+  await notify({
+    userIds: [final.requestedById],
+    type: 'reallocation.approved',
+    title: `Reallocation #${id} approved`,
+    body: `Pengalihan dana ${final.type} sebesar ${toNumber(final.amount).toLocaleString('id-ID')} sudah final-approved & alokasi terupdate.`,
+    link: `/reallocations/${id}`,
+  });
+
   revalidatePath(`/reallocations/${id}`);
   revalidatePath('/reallocations');
   revalidatePath('/dashboard');
@@ -164,9 +196,19 @@ export async function rejectReallocation(id: number, note: string) {
   const user = await requireUser();
   if (!canApproveReallocation(user.role, 'supervisor')) throw new Error('Forbidden');
   if (!note || note.length < 5) throw new Error('Alasan reject minimal 5 karakter');
+  const r = await prisma.budgetReallocation.findUniqueOrThrow({ where: { id } });
   await prisma.budgetReallocation.update({
     where: { id }, data: { status: 'rejected', rejectionNote: note },
   });
   await logAudit({ entity: 'reallocation', entityId: id, action: 'reject', actorId: user.id, note });
+
+  await notify({
+    userIds: [r.requestedById],
+    type: 'reallocation.rejected',
+    title: `Reallocation #${id} ditolak`,
+    body: `Alasan: ${note}`,
+    link: `/reallocations/${id}`,
+  });
+
   revalidatePath(`/reallocations/${id}`);
 }

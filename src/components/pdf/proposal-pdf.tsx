@@ -18,6 +18,10 @@ export type OrgSettingsForPdf = {
   defaultKantor?: string | null;
   defaultGmCluster?: string | null;
   defaultSignatureCity?: string | null;
+  approverSignaturePath?: string | null;
+  witnessSignaturePath?: string | null;
+  vpSignaturePath?: string | null;
+  finDirSignaturePath?: string | null;
 };
 
 const PROGRAM_TYPES = [
@@ -273,13 +277,21 @@ export function ProposalPdf({
             </View>
             <View style={styles.signCol3}>
               <Text style={styles.signLabel}>Menyetujui,</Text>
-              <View style={styles.signSpace} />
+              {org.approverSignaturePath ? (
+                <Image src={toImageSrc(org.approverSignaturePath)} style={styles.signImage} />
+              ) : (
+                <View style={styles.signSpace} />
+              )}
               <Text style={styles.signName}>{proposal.approverName ?? org.defaultGmCluster ?? '(approver)'}</Text>
               <Text style={styles.signTitle}>{proposal.approverTitle ?? 'Manager Cluster'}</Text>
             </View>
             <View style={styles.signCol3}>
               <Text style={styles.signLabel}>Mengetahui,</Text>
-              <View style={styles.signSpace} />
+              {org.witnessSignaturePath ? (
+                <Image src={toImageSrc(org.witnessSignaturePath)} style={styles.signImage} />
+              ) : (
+                <View style={styles.signSpace} />
+              )}
               <Text style={styles.signName}>{proposal.witnessName ?? '(witness)'}</Text>
               <Text style={styles.signTitle}>{proposal.witnessTitle ?? 'SPV MCOT'}</Text>
             </View>
@@ -290,13 +302,21 @@ export function ProposalPdf({
             <View style={styles.signRow2}>
               <View style={styles.signCol3}>
                 <Text style={styles.signLabel}>Mengetahui,</Text>
-                <View style={styles.signSpace} />
+                {org.vpSignaturePath ? (
+                  <Image src={toImageSrc(org.vpSignaturePath)} style={styles.signImage} />
+                ) : (
+                  <View style={styles.signSpace} />
+                )}
                 <Text style={styles.signName}>{org.vpName ?? '-'}</Text>
                 <Text style={styles.signTitle}>{org.vpTitle ?? 'Vice President'}</Text>
               </View>
               <View style={styles.signCol3}>
                 <Text style={styles.signLabel}>Mengetahui,</Text>
-                <View style={styles.signSpace} />
+                {org.finDirSignaturePath ? (
+                  <Image src={toImageSrc(org.finDirSignaturePath)} style={styles.signImage} />
+                ) : (
+                  <View style={styles.signSpace} />
+                )}
                 <Text style={styles.signName}>{org.finDirName ?? '-'}</Text>
                 <Text style={styles.signTitle}>{org.finDirTitle ?? 'Direktur Keuangan'}</Text>
               </View>

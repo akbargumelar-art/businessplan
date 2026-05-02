@@ -17,6 +17,10 @@ const DEFAULTS: OrgSettingsForPdf = {
   defaultKantor: 'TAP Kuningan',
   defaultGmCluster: 'Firman Suhaeddy',
   defaultSignatureCity: 'Kuningan',
+  approverSignaturePath: null,
+  witnessSignaturePath: null,
+  vpSignaturePath: null,
+  finDirSignaturePath: null,
 };
 
 export async function getOrgSettings(): Promise<OrgSettingsForPdf> {
@@ -38,6 +42,10 @@ export async function getOrgSettings(): Promise<OrgSettingsForPdf> {
     defaultKantor: row.defaultKantor,
     defaultGmCluster: row.defaultGmCluster,
     defaultSignatureCity: row.defaultSignatureCity,
+    approverSignaturePath: row.approverSignaturePath,
+    witnessSignaturePath: row.witnessSignaturePath,
+    vpSignaturePath: row.vpSignaturePath,
+    finDirSignaturePath: row.finDirSignaturePath,
   };
 }
 
