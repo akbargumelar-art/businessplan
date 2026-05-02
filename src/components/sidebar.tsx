@@ -15,6 +15,7 @@ import {
   Tag,
   CalendarRange,
   Users,
+  UserCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import type { Role } from '@/types/enums';
@@ -112,6 +113,13 @@ export function Sidebar({ user }: { user: { name?: string | null; email?: string
           <div className="text-sm font-medium text-slate-900 truncate">{user.name ?? user.email}</div>
           <div className="text-xs text-slate-500 capitalize">{user.role}</div>
         </div>
+        <Link
+          href="/profile"
+          className="flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100"
+        >
+          <UserCircle className="h-4 w-4" />
+          Profile & Tanda Tangan
+        </Link>
         <form action="/api/auth/signout" method="post">
           <button
             type="submit"

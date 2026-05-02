@@ -10,6 +10,7 @@ import { Table, THead, TBody, Tr, Th, Td } from '@/components/ui/table';
 import { StatusBadge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { finalizeProposal, cancelProposal } from '@/server/actions/proposals';
+import { AttachmentUpload } from '@/components/attachment-upload';
 
 export default async function ProposalDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -117,6 +118,21 @@ export default async function ProposalDetailPage({ params }: { params: Promise<{
                   </Tr>
                 </TBody>
               </Table>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Lampiran (KTP, Pass Photo, WoK, dokumentasi)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <AttachmentUpload
+                proposalId={proposalId}
+                attachments={proposal.attachments.map((a) => ({
+                  id: a.id, filePath: a.filePath, fileType: a.fileType, label: a.label,
+                }))}
+                canEdit={proposal.createdById === user.id || isAdmin(user.role)}
+              />
             </CardContent>
           </Card>
         </div>

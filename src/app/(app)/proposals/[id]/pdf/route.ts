@@ -9,7 +9,7 @@ import { getOrgSettings } from '@/lib/org';
 export const dynamic = 'force-dynamic';
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   await requireUser();
@@ -19,15 +19,17 @@ export async function GET(
       where: { id: Number(id) },
       include: {
         items: { orderBy: { sortOrder: 'asc' } },
+        attachments: true,
         allocation: { include: { category: true, period: true } },
-        createdBy: { select: { name: true, email: true } },
+        createdBy: { select: { name: true, email: true, signatureImagePath: true } },
       },
     }),
     getOrgSettings(),
   ]);
   if (!proposal) return new Response('Not found', { status: 404 });
 
-  const element = createElement(ProposalPdf, { proposal, org }) as unknown as ReactElement<DocumentProps>;
+  const attachmentBase = `${req.nextUrl.protocol}//${req.nextUrl.host}`;
+  const element = createElement(ProposalPdf, { proposal, org, attachmentBase }) as unknown as ReactElement<DocumentProps>;
   const buf = await renderToBuffer(element);
   const filename = `${(proposal.number ?? `draft-${proposal.id}`).replace(/[\/\\]/g, '-')}.pdf`;
 

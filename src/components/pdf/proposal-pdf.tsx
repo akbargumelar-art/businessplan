@@ -1,5 +1,5 @@
-import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
-import type { Proposal, ProposalItem, BudgetAllocation, BudgetCategory, BudgetPeriod, User } from '@prisma/client';
+import { Document, Page, Text, View, Image, StyleSheet } from '@react-pdf/renderer';
+import type { Proposal, ProposalItem, ProposalAttachment, BudgetAllocation, BudgetCategory, BudgetPeriod, User } from '@prisma/client';
 import { formatIDR, formatDate, monthName, toNumber } from '@/lib/format';
 
 export type OrgSettingsForPdf = {
@@ -92,6 +92,7 @@ const styles = StyleSheet.create({
   signColEmpty: { flex: 1 },
   signLabel: { fontSize: 9, marginBottom: 1 },
   signSpace: { height: 28 },
+  signImage: { height: 36, width: 80, objectFit: 'contain', marginVertical: -4 },
   signName: { fontSize: 9, fontWeight: 700, textDecoration: 'underline' },
   signTitle: { fontSize: 8.5, marginTop: 1 },
 
@@ -103,6 +104,7 @@ const styles = StyleSheet.create({
   attHeaderCell: { flex: 1, padding: 5, fontWeight: 700, borderRight: '1 solid #94a3b8', borderBottom: '1 solid #94a3b8', textAlign: 'center' },
   attBodyRow: { flexDirection: 'row', minHeight: 130 },
   attBodyCell: { flex: 1, padding: 5, borderRight: '1 solid #94a3b8', borderBottom: '1 solid #94a3b8', justifyContent: 'center', alignItems: 'center' },
+  attImage: { maxHeight: 120, maxWidth: '100%', objectFit: 'contain' },
   placeholderText: { fontSize: 8, color: '#94a3b8', textAlign: 'center' },
 
   breakdown: { marginTop: 16 },
@@ -137,14 +139,23 @@ function fmtPelaksanaan(start: Date, end: Date): string {
 export function ProposalPdf({
   proposal,
   org,
+  attachmentBase,
 }: {
   proposal: Proposal & {
     items: ProposalItem[];
+    attachments: ProposalAttachment[];
     allocation: BudgetAllocation & { category: BudgetCategory; period: BudgetPeriod };
-    createdBy: Pick<User, 'name' | 'email'>;
+    createdBy: Pick<User, 'name' | 'email' | 'signatureImagePath'>;
   };
   org: OrgSettingsForPdf;
+  attachmentBase: string; // absolute base, e.g. "http://localhost:3000"
 }) {
+  const ktp = proposal.attachments.find((a) => a.label === 'KTP' && a.fileType.startsWith('image/'));
+  const passPhoto = proposal.attachments.find((a) => a.label === 'Pass Photo' && a.fileType.startsWith('image/'));
+  const wokAttachment = proposal.attachments.find((a) => a.label === 'WoK');
+  const wokIsImage = wokAttachment?.fileType.startsWith('image/');
+  const wokText = !wokIsImage ? (proposal.applicantAddress ?? '-') : null;
+  const toImageSrc = (filePath: string) => `${attachmentBase}${filePath}`;
   const checked = pickPrograms(proposal.programType);
   const total = toNumber(proposal.totalBudget);
   const tanggalPengajuan = proposal.finalizedAt ?? proposal.createdAt;
@@ -252,7 +263,11 @@ export function ProposalPdf({
           <View style={styles.signRow}>
             <View style={styles.signCol3}>
               <Text style={styles.signLabel}>Dibuat Oleh,</Text>
-              <View style={styles.signSpace} />
+              {proposal.createdBy.signatureImagePath ? (
+                <Image src={toImageSrc(proposal.createdBy.signatureImagePath)} style={styles.signImage} />
+              ) : (
+                <View style={styles.signSpace} />
+              )}
               <Text style={styles.signName}>{proposal.createdBy.name}</Text>
               <Text style={styles.signTitle}>Manager Support {proposal.kantor ? proposal.kantor.replace(/^TAP\s+/i, '') : 'Cirebon Raya'}</Text>
             </View>
@@ -301,13 +316,25 @@ export function ProposalPdf({
           </View>
           <View style={styles.attBodyRow}>
             <View style={styles.attBodyCell}>
-              <Text style={styles.placeholderText}>(Upload via attachment)</Text>
+              {ktp ? (
+                <Image src={toImageSrc(ktp.filePath)} style={styles.attImage} />
+              ) : (
+                <Text style={styles.placeholderText}>(belum upload)</Text>
+              )}
             </View>
             <View style={styles.attBodyCell}>
-              <Text style={styles.placeholderText}>(Upload via attachment)</Text>
+              {passPhoto ? (
+                <Image src={toImageSrc(passPhoto.filePath)} style={styles.attImage} />
+              ) : (
+                <Text style={styles.placeholderText}>(belum upload)</Text>
+              )}
             </View>
             <View style={styles.attBodyCell}>
-              <Text>{proposal.applicantAddress ?? '-'}</Text>
+              {wokIsImage && wokAttachment ? (
+                <Image src={toImageSrc(wokAttachment.filePath)} style={styles.attImage} />
+              ) : (
+                <Text>{wokText ?? '-'}</Text>
+              )}
             </View>
           </View>
         </View>
